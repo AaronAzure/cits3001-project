@@ -1,17 +1,7 @@
+from bcolors import bcolors
 from agent import Agent
 from random_agent import RandomAgent
 import random
-
-
-HEADER = '\033[95m'
-OKBLUE = '\033[94m'
-OKCYAN = '\033[96m'
-OKGREEN = '\033[92m'
-WARNING = '\033[93m'
-FAIL = '\033[91m'
-ENDC = '\033[0m'
-BOLD = '\033[1m'
-UNDERLINE = '\033[4m'
 
 class Game:
     '''
@@ -96,14 +86,15 @@ class Round():
         '''
         produces a string representation of the round
         '''
-        s = 'Round:' + str(self.rnd)
+        s = bcolors.PINK + 'Round:' + str(self.rnd)
         for m in self.missions:
             s = s +'\n'+str(m)
         if self.is_successful():
             s = s + '\nResistance won the round.'
         else:
             s = s + '\nResistance lost the round.'
-        return s    
+        s += bcolors.RESET
+        return s
 
     def __repr__(self):
         '''
@@ -181,17 +172,18 @@ class Mission():
         '''
         Gives a string representation of the mission
         '''
-        s = 'Leader:'+str(self.agents[self.leader_id])+'\nTeam: '
+        s = bcolors.BLUE + 'Leader:'+str(self.agents[self.leader_id])+'\nTeam: '
         for i in self.team:
             s += str(self.agents[i])+', '
-        s = s[:-2]+'\nVotes for: '
+        s = s[:-2]+bcolors.CYAN+'\nVotes for: '
         for i in self.votes_for:
             s+= str(self.agents[i])+', '
         if self.is_approved():    
             s = s[:-2]+'\nFails recorded:'+ str(len(self.fails))
-            s += '\nMission '+ ('Succeeded' if self.is_successful() else 'Failed')
+            s += ((bcolors.GREEN + '\nMission ' + 'Succeeded') if self.is_successful() else (bcolors.RED + '\nMission ' + 'Failed'))
         else:
-            s = s[:-2]+'\nMission Aborted'
+            # s = s[:-2]+'\nFails recorded:'+ str(len(self.fails)) # self added
+            s = s[:-2]+'\n' + bcolors.RED + '--Mission Aborted' + bcolors.RESET
         return s    
 
     def __repr__(self):

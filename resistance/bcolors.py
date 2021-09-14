@@ -8,5 +8,3 @@ class bcolors:
     RESET = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-
-print(bcolors.UNDERLINE, "hello", bcolors.RESET)
