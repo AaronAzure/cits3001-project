@@ -8,3 +8,4 @@ class bcolors:
     RESET = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    MAGENTA = '\033[35;1m'

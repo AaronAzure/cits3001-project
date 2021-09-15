@@ -53,15 +53,16 @@ class Game:
         for a in self.agents:
             a.game_outcome(self.missions_lost<3, self.spies)
 
+    # Final scores (who won)
     def __str__(self):
         s = 'Game between agents:' + str(self.agents)
         for r in self.rounds:
             s = s + '\n' + str(r)
         if self.missions_lost<3:
-            s = s + '\nThe Resistance succeeded!'
+            s = s + bcolors.MAGENTA + '\n\nThe Resistance succeeded!'
         else:
-            s = s + '\nThe Resistance failed!'
-        s = s + 'The spies were agents: '+ str(self.spies)    
+            s = s + bcolors.MAGENTA + '\n\nThe Resistance failed!'
+        s = s + bcolors.RED + '\nThe spies were agents: '+ str(self.spies) + '\n' + bcolors.RESET
         return s    
 
 class Round():
@@ -86,13 +87,13 @@ class Round():
         '''
         produces a string representation of the round
         '''
-        s = bcolors.PINK + 'Round:' + str(self.rnd)
+        s = bcolors.PINK + '\nRound:' + str(self.rnd + 1)
         for m in self.missions:
             s = s +'\n'+str(m)
         if self.is_successful():
-            s = s + '\nResistance won the round.'
+            s = s + bcolors.YELLOW + '\nResistance won the round.'
         else:
-            s = s + '\nResistance lost the round.'
+            s = s + bcolors.YELLOW + '\nResistance lost the round.'
         s += bcolors.RESET
         return s
 
