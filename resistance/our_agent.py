@@ -165,6 +165,23 @@ class OurAgent(Agent):
             pass
         
         # if good, if there are betrayals => people in mission, increase sus
+        if betrayals == 0 :
+            sums = 0
+            not_in_mission = 0
+            self.sus_meter.setdefault(proposer, self.sus_meter.get(proposer)/2)
+            sums += self.sus_meter.get(proposer)
+            for i in range(len(self.number_of_players)):
+                if i in mission:
+                    current_sus = self.sus_meter.get(i)
+                    self.sus_meter.setdefault(i,current_sus/2)
+                    sums += self.sus_meter.get(i)
+                else:
+                    not_in_mission += 1
+            temp = 1 - sums
+            increase = temp / not_in_mission
+            for i in range(len(self.number_of_players)):
+                if i not in mission:
+                    self.sus_meter.setdefault(i,self.sus_meter.get(i) + increase)
         if betrayals == 0:
             for i in range(self.number_of_players):
                 # People on the mission decrease sus
