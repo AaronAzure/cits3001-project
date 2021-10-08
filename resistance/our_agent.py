@@ -45,6 +45,17 @@ class OurAgent(Agent):
         self.player_number = player_number
         self.spy_list = spy_list
 
+        # Create probability chart for 
+        if not self.is_spy():
+            self.sus_meter = dict()
+            for i in range(number_of_players):
+                # Do not include oneself as probability of being a spy
+                if i == self.player_number:
+                    continue
+                self.sus_meter.setdefault(i, 1.0 / (number_of_players - 1))
+
+
+    #! DONE
     def is_spy(self):
         '''
         returns True iff the agent is a spy
@@ -81,15 +92,20 @@ class OurAgent(Agent):
     def vote(self, mission, proposer):
         '''
         The agents on the mission are distinct and indexed between 0 and number_of_players.
-        mission  - is a list of agents to be sent on a mission. 
+        mission  - is a list of agents (index) to be sent on a mission. 
         proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
         # how does proposer affect our vote?
         # based on who is going on the mission, our vote is affected based on our internal state
+        probability = 1
+        for i in mission:
+            if i in self.sus_meter.keys():
+                probability -= self.sus_meter.get(i)
 
         # return random.random() < agent.memory[index of mission]
-        return random.random()<0.5
+        return random.random()<probability
+        # return random.random()<0.5
 
 
     def vote_outcome(self, mission, proposer, votes):
@@ -114,15 +130,24 @@ class OurAgent(Agent):
         The method should return True if this agent chooses to betray the mission, and False otherwise. 
         By default, spies will betray 30% of the time. 
         '''
-        # If in mission there is another spy, lower chance of betrarying
-        # If the only spy in mission is you, 
         # based on how close we winning (game state) - betrayal rate
 
         # ignore proposer, does not affect our decision
 
+
         # If we betray, the proposer (may or may not be a spy also) and us will be more sus
         if self.is_spy():
-            return random.random()<0.3
+            # If in mission there is another spy, lower chance of betrarying
+            n_spies = 0
+            for i in mission:
+                # If there is another spy, probability of betraying drops by 90%
+                if i in self.spy_list and i != self.player_number:
+                    n_spies += 10
+            if n_spies == 0:
+                n_spies = 1
+            # If the only spy in mission is you, 
+            return random.random()< 1.0 / n_spies
+            # return random.random()<0.3
 
     # up to 5 missions
     def mission_outcome(self, mission, proposer, betrayals, mission_success):
@@ -136,7 +161,23 @@ class OurAgent(Agent):
         '''
         #* for our sake
         # if spy, just pass
+        if self.is_spy():
+            pass
+        
         # if good, if there are betrayals => people in mission, increase sus
+        if betrayals == 0:
+            for i in range(self.number_of_players):
+                # People on the mission decrease sus
+                if i in mission:
+                    current_sus = self.sus_meter.get(i)
+                    self.sus_meter.setdefault(i, current_sus / 2)
+                # People not on the mission increase sus
+                else:
+                    current_sus = self.sus_meter.get(i)
+                    self.sus_meter.setdefault(i, current_sus * 2)
+
+            # for i in mission:
+            
         # if good, if there are no betrayals => people in mission, less sus
         # if betrayals == len(mission), all agents on that mission are spies
 
