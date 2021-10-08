@@ -98,13 +98,20 @@ class OurAgent(Agent):
         '''
         # how does proposer affect our vote?
         # based on who is going on the mission, our vote is affected based on our internal state
-        probability = 1
-        for i in mission:
-            if i in self.sus_meter.keys():
-                probability -= self.sus_meter.get(i)
+        if not self.is_spy():
+            probability = 1
+            for i in mission:
+                if i in self.sus_meter.keys():
+                    probability -= self.sus_meter.get(i)
+            return random.random()<probability
+        else:
+            # todo - number of betrayals required affects vote
+            if len([i for i in self.spy_list if i in mission ]) > 1:
+                return random.random()<0.1
+            return 1
 
         # return random.random() < agent.memory[index of mission]
-        return random.random()<probability
+        # return random.random()<probability
         # return random.random()<0.5
 
 

@@ -8,13 +8,14 @@ END = '\033[0m'
 
 
 # !------------------------------------------------------------------------------------------! #
-        #*  5 players (2 spies)  -   5 C 2  =  10
-        #*  6 players (2 spies)  -   6 C 2  =  15
-        #*  7 players (3 spies)  -   7 C 3  =  35
-        #*  8 players (3 spies)  -   8 C 3  =  56
-        #*  9 players (3 spies)  -   9 C 3  =  84
-        #* 10 players (2 spies)  -  10 C 4  =  210
+        #*  5 players (2 spies)  -   5 C 2  =  10   (6)
+        #*  6 players (2 spies)  -   6 C 2  =  15   (10)
+        #*  7 players (3 spies)  -   7 C 3  =  35   (20)
+        #*  8 players (3 spies)  -   8 C 3  =  56   (35)
+        #*  9 players (3 spies)  -   9 C 3  =  84   (56)
+        #* 10 players (4 spies)  -  10 C 4  =  210  (126)
 # !------------------------------------------------------------------------------------------! #
+# todo Research Question: Best resistance player in a 5 player game (in finding the spies)
 
 
 
@@ -171,12 +172,13 @@ for i in range(number_of_players):
     sus_meter.setdefault(i, 1.0 / (number_of_players - 1))
     # sus_meter[i] = (1.0 / (number_of_players - 1))
 
-#? 1  :  
-#  0  :  0.25 -> 0.0
-#  2  :  0.25 -> 0.0
-#! 3  :  0.25 -> 1.0
-#! 4  :  0.25 -> 1.0
-            # 
+#? 0  :  
+#  1  :  0.5 -> 0.0
+#  2  :  0.5 -> 0.0
+#! 3  :  0.5 -> 1.0
+#! 4  :  0.5 -> 1.0
+    # todo first mission [3, 4], betrayals == 2, betrayals == len(mission)
+
 
 print_result()
 mission_outcome([1,3], 4, 0, True)
