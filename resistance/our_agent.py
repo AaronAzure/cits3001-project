@@ -228,16 +228,16 @@ class OurAgent(Agent):
         if self.is_spy():
             pass
 
-        # if good, if there are betrayals => people in mission, increase sus
+        #* if good, if there are betrayals => people in mission, increase sus
         if betrayals == len(mission):
             # if all agents sent on mission betrayed
-            update_sus_meter(self, mission, True, True)
+            self.update_sus_meter(self, mission, True, True)
 
         elif betrayals == 0:
-            update_sus_meter(self, mission, False)
+            self.update_sus_meter(self, mission, False)
             # for i in mission:
         else:
-            update_sus_meter(self, mission, True)
+            self.update_sus_meter(self, mission, True)
 
         # if good, if there are no betrayals => people in mission, less sus
         # if betrayals == len(mission), all agents on that mission are spies
