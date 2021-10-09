@@ -56,7 +56,6 @@ class OurAgent(Agent):
         self.total_prob = self.number_of_spies * 1.0
         # Create probability chart for
         if not self.is_spy():
-            self.sus_meter = dict()
             for i in range(number_of_players):
                 # Do not include oneself as probability of being a spy
                 if i == self.player_number:
@@ -87,12 +86,24 @@ class OurAgent(Agent):
         # * Are we spy
         if self.is_spy():
             # pick up to @param betrayals_req
-            pass
-
-        while len(team) < team_size:
-            agent = random.randrange(team_size)
-            if agent not in team:
-                team.append(agent)
+            team.append(self.player_number)
+            betrayals_required -= 1
+            while betrayals_required > 0:
+                pick = random.choice(self.spy_list)
+                if pick not in team:
+                    team.append(pick)
+                    betrayals_required -= 1
+            while len(team) < team_size:
+                agent = random.randrange(self.number_of_players)
+                if agent not in team:
+                    team.append(agent)
+        else:
+            team.append(self.player_number)
+            while len(team) < team_size:
+                agent = random.randrange(self.number_of_players)
+                # choose a random agent that is not in the spy list
+                if agent not in team and agent not in self.spy_list:
+                    team.append(agent)
 
         # * Are we good
 
@@ -107,13 +118,24 @@ class OurAgent(Agent):
         '''
         # how does proposer affect our vote?
         # based on who is going on the mission, our vote is affected based on our internal state
-        probability = 1
-        for i in mission:
-            if i in self.sus_meter.keys():
-                probability -= self.sus_meter.get(i)
-
-        # return random.random() < agent.memory[index of mission]
-        return random.random() < probability
+        if not self.is_spy():
+            probability = self.total_prob
+            for i in mission:
+                if i in self.sus_meter.keys():
+                    probability -= self.sus_meter.get[i]
+            # return random.random() < agent.memory[index of mission]
+            return random.random() < (probability/self.number_of_spies)
+        else:
+            spies_in = 0
+            for i in mission:
+                if i in self.spy_list:
+                    spies_in += 1
+            if spies_in == 0:
+                return False
+            else:
+                # the spies_in amount will determine the probability of we voting for the mission as a spy
+                # for now, it always vote for any mission that has at least 1 spy in
+                return True
         # return random.random()<0.5
 
     def vote_outcome(self, mission, proposer, votes):
@@ -163,16 +185,16 @@ class OurAgent(Agent):
                         not_in_mission.append(i)
             else:
                 if all_spies is True:
-                for i in self.sus_meter.keys():
-                    if i in mission:
-                        # update sus and add to spy_list
-                        current_sus = self.sus_meter.get(i)
-                        not_in_mission_sum -= current_sus
-                        self.sus_meter[i] = current_sus * 1.2
-                        new_in_mission_sum += self.sus_meter[i]
-                        self.spy_list.append(i)
-                    else:
-                        not_in_mission.append(i)
+                    for i in self.sus_meter.keys():
+                        if i in mission:
+                            # update sus and add to spy_list
+                            current_sus = self.sus_meter.get(i)
+                            not_in_mission_sum -= current_sus
+                            self.sus_meter[i] = current_sus * 1.2
+                            new_in_mission_sum += self.sus_meter[i]
+                            self.spy_list.append(i)
+                        else:
+                            not_in_mission.append(i)
         else:
             for i in self.sus_meter.keys():
                 if i in mission:
