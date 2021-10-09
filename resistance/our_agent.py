@@ -2,7 +2,7 @@ from agent import Agent
 import random
 
 
-class OurAgent(Agent):
+class RandomAgent(Agent):
     '''A sample implementation of a random agent in the game The Resistance'''
 
     # * if not spy internal state / memory (probability of index agent of being a spy)
@@ -93,6 +93,7 @@ class OurAgent(Agent):
                 if pick not in team:
                     team.append(pick)
                     betrayals_required -= 1
+
             while len(team) < team_size:
                 agent = random.randrange(self.number_of_players)
                 if agent not in team:
@@ -122,9 +123,9 @@ class OurAgent(Agent):
             probability = self.total_prob
             for i in mission:
                 if i in self.sus_meter.keys():
-                    probability -= self.sus_meter.get[i]
+                    probability -= self.sus_meter[i]
             # return random.random() < agent.memory[index of mission]
-            return random.random() < (probability/self.number_of_spies)
+            return random.random() > (probability/self.number_of_spies)
         else:
             spies_in = 0
             for i in mission:
@@ -149,7 +150,18 @@ class OurAgent(Agent):
         # * for our own sake
         # Based on votes, if we suspect someone to be a spy - if they accept: what happen?
         # Based on votes, if we suspect someone to be a spy - if they reject: what happen?
-        pass
+        agent_involved = False
+        if self.is_spy():
+            pass
+        else:
+            for agent in mission:
+                if agent in self.spy_list:
+                    agent_involved = True
+                break
+            # if agent_involved is True:
+            #     for i in votes.keys():
+            #         if votes[i] == True and i not in self.spy_list:
+            #             self.sus_meter[i] *= 1.2
 
     def betray(self, mission, proposer):
         '''
@@ -167,7 +179,7 @@ class OurAgent(Agent):
         return True
     # up to 5 missions
 
-    def update_sus_meter(self, mission, betrayed, all_spies=False):
+    def update_sus_meter(self, mission, betrayed=False, all_spies=False):
         not_in_mission = []
         not_in_mission_sum = self.total_prob
         new_in_mission_sum = 0
@@ -197,6 +209,7 @@ class OurAgent(Agent):
                             not_in_mission.append(i)
         else:
             for i in self.sus_meter.keys():
+                print(i)
                 if i in mission:
                     # update sus and add to spy_list
                     current_sus = self.sus_meter.get(i)
@@ -209,6 +222,7 @@ class OurAgent(Agent):
 
         increase_sus = (self.total_prob - new_in_mission_sum -
                         not_in_mission_sum) / len(not_in_mission)
+        # update sus_meter for ones who didn't go for the mission
         for j in not_in_mission:
             current_sus = self.sus_meter.get(j)
             self.sus_meter[j] = current_sus + increase_sus
@@ -227,17 +241,22 @@ class OurAgent(Agent):
         # if spy, just pass
         if self.is_spy():
             pass
-
-        #* if good, if there are betrayals => people in mission, increase sus
+        not_in_mission = []
+        not_in_mission_sum = self.total_prob
+        new_in_mission_sum = 0
+        # if good, if there are betrayals => people in mission, increase sus
         if betrayals == len(mission):
             # if all agents sent on mission betrayed
-            self.update_sus_meter(self, mission, True, True)
+            all_spies = True
+            betrayed = True
+            self.update_sus_meter(self, mission, betrayed, all_spies)
 
         elif betrayals == 0:
-            self.update_sus_meter(self, mission, False)
+            self.update_sus_meter(self, mission)
             # for i in mission:
         else:
-            self.update_sus_meter(self, mission, True)
+            betrayed = True
+            self.update_sus_meter(self, mission, betrayed)
 
         # if good, if there are no betrayals => people in mission, less sus
         # if betrayals == len(mission), all agents on that mission are spies
