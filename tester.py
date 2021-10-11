@@ -15,6 +15,7 @@ END = '\033[0m'
 # *  9 players (3 spies)  -   9 C 3  =  84
 # * 10 players (4 spies)  -  10 C 4  =  210
 # !------------------------------------------------------------------------------------------! #
+# todo Research Question: Best resistance player in a 5 player game (in finding the spies)
 
 
 def update_sus_meter(mission, betrayed, all_spies=False):
