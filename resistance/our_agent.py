@@ -92,7 +92,7 @@ class OurAgent(Agent):
 
             while len(team) < team_size:
                 agent = random.randrange(self.number_of_players)
-                if agent not in team:
+                if agent not in team and agent not in self.spy_list:
                     team.append(agent)
         else:
             team.append(self.player_number)
