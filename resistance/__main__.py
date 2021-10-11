@@ -1,4 +1,5 @@
-from our_agent import RandomAgent
+# from our_agent import RandomAgent   # Our project agent
+from random_agent import RandomAgent
 from game import Game
 
 agents = [
