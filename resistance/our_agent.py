@@ -14,6 +14,7 @@ class OurAgent(Agent):
     voted_to_go_on_mission = []
     betrayal_rate = 0.0  # no_missions_failed / rounds_complete
     number_of_spies = 0
+    cur_round = 0
     # ? 5 C 2 = 10
     # (1 / number_of_players) %
 
@@ -81,7 +82,6 @@ class OurAgent(Agent):
         # * Are we spy
         if self.is_spy():
             # pick up to @param betrayals_req
-            print("spy choosing")
             team.append(self.player_number)
             betrayals_required -= 1
             while betrayals_required > 0:
@@ -95,16 +95,12 @@ class OurAgent(Agent):
                 if agent not in team:
                     team.append(agent)
         else:
-            print("resistance choosing")
             team.append(self.player_number)
             while len(team) < team_size:
                 agent = random.randrange(self.number_of_players)
                 # choose a random agent that is not in the spy list
                 if agent not in team and agent not in self.spy_list:
                     team.append(agent)
-
-        # * Are we good
-
         return team
 
     def vote(self, mission, proposer):
@@ -116,23 +112,28 @@ class OurAgent(Agent):
         '''
         # how does proposer affect our vote?
         # based on who is going on the mission, our vote is affected based on our internal state
+
+        # resistance
         if not self.is_spy():
             probability = self.total_prob
             for i in mission:
+                # vote against any team that involves spy
+                if i in self.spy_list:
+                    return False
                 if i in self.sus_meter.keys():
                     probability -= self.sus_meter[i]
-            # return random.random() < agent.memory[index of mission]
+            if self.player_number in mission:
+                return True
             return random.random() > (probability/self.number_of_spies)
         else:
             spies_in = 0
+            betrayals_req = Agent.fails_required[self.number_of_players][self.cur_round]
             for i in mission:
                 if i in self.spy_list:
                     spies_in += 1
-            if spies_in == 0:
+            if spies_in < betrayals_req:
                 return False
             else:
-                # the spies_in amount will determine the probability of we voting for the mission as a spy
-                # for now, it always vote for any mission that has at least 1 spy in
                 return True
         # return random.random()<0.5
 
@@ -189,6 +190,7 @@ class OurAgent(Agent):
 
         # * for our sake
         # if spy, just pass
+        self.cur_round += 1
         if self.is_spy():
             pass
         else:
@@ -209,7 +211,7 @@ class OurAgent(Agent):
                         self.sus_meter[i] = 1
                         new_in_mission_sum += self.sus_meter[i]
                         self.spy_list.append(i)
-                    elif i not in mission and i!= self.player_number:
+                    elif i not in mission and i != self.player_number:
                         not_in_mission.append(i)
                     else:
                         pass
@@ -221,7 +223,7 @@ class OurAgent(Agent):
                         not_in_mission_sum -= current_sus
                         self.sus_meter[i] = current_sus/1.2
                         new_in_mission_sum += self.sus_meter[i]
-                    elif i not in mission and i!= self.player_number:
+                    elif i not in mission and i != self.player_number:
                         # ones who weren't in the mission will increase sus
                         not_in_mission.append(i)
                     else:
@@ -235,13 +237,13 @@ class OurAgent(Agent):
                         self.sus_meter[i] = current_sus * 1.2
                         new_in_mission_sum += self.sus_meter[i]
                         self.spy_list.append(i)
-                    elif i not in mission and i!= self.player_number:
+                    elif i not in mission and i != self.player_number:
                         not_in_mission.append(i)
                     else:
                         pass
 
             increase_sus = (self.total_prob - new_in_mission_sum -
-                        not_in_mission_sum) / len(not_in_mission)
+                            not_in_mission_sum) / len(not_in_mission)
             # update sus_meter for ones who didn't go on the mission
             for j in not_in_mission:
                 current_sus = self.sus_meter.get(j)
@@ -249,8 +251,8 @@ class OurAgent(Agent):
         # if good, if there are no betrayals => people in mission, less sus
         # if betrayals == len(mission), all agents on that mission are spies
 
-
     #
+
     def round_outcome(self, rounds_complete, missions_failed):
         '''
         basic informative function, where the parameters indicate:
