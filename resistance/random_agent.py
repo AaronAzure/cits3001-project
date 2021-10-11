@@ -38,6 +38,7 @@ class RandomAgent(Agent):
             agent = random.randrange(team_size)
             if agent not in team:
                 team.append(agent)
+
         return team        
 
     def vote(self, mission, proposer):

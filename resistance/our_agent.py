@@ -2,7 +2,7 @@ from agent import Agent
 import random
 
 
-class RandomAgent(Agent):
+class OurAgent(Agent):
     '''A sample implementation of a random agent in the game The Resistance'''
 
     # * if not spy internal state / memory (probability of index agent of being a spy)
@@ -47,12 +47,7 @@ class RandomAgent(Agent):
         self.spy_list = spy_list
 
         # set the number of spies base on table size
-        if number_of_players in [5, 6]:
-            self.number_of_spies = 2
-        elif number_of_players in [7, 8, 9]:
-            self.number_of_spies = 3
-        else:
-            self.number_of_spies = 4
+        self.number_of_spies = Agent.spy_count.get(number_of_players)
         self.total_prob = self.number_of_spies * 1.0
         # Create probability chart for
         if not self.is_spy():
@@ -86,6 +81,7 @@ class RandomAgent(Agent):
         # * Are we spy
         if self.is_spy():
             # pick up to @param betrayals_req
+            print("spy choosing")
             team.append(self.player_number)
             betrayals_required -= 1
             while betrayals_required > 0:
@@ -99,6 +95,7 @@ class RandomAgent(Agent):
                 if agent not in team:
                     team.append(agent)
         else:
+            print("resistance choosing")
             team.append(self.player_number)
             while len(team) < team_size:
                 agent = random.randrange(self.number_of_players)
@@ -176,7 +173,9 @@ class RandomAgent(Agent):
         # ignore proposer, does not affect our decision
 
         # the simple agent always betray when he's in the mission
-        return True
+        if self.is_spy():
+            print("betraying")
+            return True
     # up to 5 missions
 
     def update_sus_meter(self, mission, betrayed=False, all_spies=False):
@@ -209,7 +208,6 @@ class RandomAgent(Agent):
                             not_in_mission.append(i)
         else:
             for i in self.sus_meter.keys():
-                print(i)
                 if i in mission:
                     # update sus and add to spy_list
                     current_sus = self.sus_meter.get(i)
@@ -237,26 +235,26 @@ class RandomAgent(Agent):
         It is not expected or required for this function to return anything.
         '''
 
-        # * for our sake
-        # if spy, just pass
-        if self.is_spy():
-            pass
-        not_in_mission = []
-        not_in_mission_sum = self.total_prob
-        new_in_mission_sum = 0
-        # if good, if there are betrayals => people in mission, increase sus
-        if betrayals == len(mission):
-            # if all agents sent on mission betrayed
-            all_spies = True
-            betrayed = True
-            self.update_sus_meter(self, mission, betrayed, all_spies)
+        # # * for our sake
+        # # if spy, just pass
+        # if self.is_spy():
+        #     pass
+        # not_in_mission = []
+        # not_in_mission_sum = self.total_prob
+        # new_in_mission_sum = 0
+        # # if good, if there are betrayals => people in mission, increase sus
+        # if betrayals == len(mission):
+        #     # if all agents sent on mission betrayed
+        #     all_spies = True
+        #     betrayed = True
+        #     self.update_sus_meter(self, mission, betrayed, all_spies)
 
-        elif betrayals == 0:
-            self.update_sus_meter(self, mission)
-            # for i in mission:
-        else:
-            betrayed = True
-            self.update_sus_meter(self, mission, betrayed)
+        # elif betrayals == 0:
+        #     self.update_sus_meter(self, mission)
+        #     # for i in mission:
+        # else:
+        #     betrayed = True
+        #     self.update_sus_meter(self, mission, betrayed)
 
         # if good, if there are no betrayals => people in mission, less sus
         # if betrayals == len(mission), all agents on that mission are spies

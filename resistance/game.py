@@ -1,6 +1,7 @@
 from bcolors import bcolors
 from agent import Agent
-from our_agent import RandomAgent
+from our_agent import OurAgent
+from random_agent import RandomAgent
 import random
 
 
@@ -37,7 +38,7 @@ class Game:
         # start game for each agent
         for agent_id in range(self.num_players):
             spy_list = self.spies.copy() if agent_id in self.spies else []
-            agents[agent_id].new_game(self.num_players, agent_id, spy_list)
+            self.agents[agent_id].new_game(self.num_players, agent_id, spy_list)
         # initialise rounds
         self.missions_lost = 0
         self.rounds = []
@@ -182,6 +183,7 @@ class Mission():
         '''
         s = bcolors.BLUE + 'Leader:' + \
             str(self.agents[self.leader_id])+'\nTeam: '
+        print(self.team)
         for i in self.team:
             s += str(self.agents[i])+', '
         s = s[:-2]+bcolors.CYAN+'\nVotes for: '
