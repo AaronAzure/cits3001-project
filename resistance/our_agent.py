@@ -177,58 +177,6 @@ class OurAgent(Agent):
             return True
     # up to 5 missions
 
-    def update_sus_meter(self, mission, betrayed=False, all_spies=False):
-        not_in_mission = []
-        not_in_mission_sum = self.total_prob
-        new_in_mission_sum = 0
-        if betrayed is True:
-            if all_spies is True:
-                for i in range(self.number_of_players):
-                    if i in mission and i != self.player_number:
-                        # update sus and add to spy_list
-                        current_sus = self.sus_meter.get(i)
-                        not_in_mission_sum -= current_sus
-                        self.sus_meter[i] = 1
-                        new_in_mission_sum += self.sus_meter[i]
-                        self.spy_list.append(i)
-                    elif i not in mission and i!= self.player_number:
-                        not_in_mission.append(i)
-                    else:
-                        pass
-            else:
-                for i in range(self.number_of_players):
-                    if i in mission and i != self.player_number:
-                        # update sus and add to spy_list
-                        current_sus = self.sus_meter.get(i)
-                        not_in_mission_sum -= current_sus
-                        self.sus_meter[i] = current_sus * 1.2
-                        new_in_mission_sum += self.sus_meter[i]
-                        self.spy_list.append(i)
-                    elif i not in mission and i!= self.player_number:
-                        not_in_mission.append(i)
-                    else:
-                        pass
-        else:
-            for i in range(self.number_of_players):
-                if i in mission and i != self.player_number:
-                    # update sus and add to spy_list
-                    current_sus = self.sus_meter.get(i)
-                    not_in_mission_sum -= current_sus
-                    self.sus_meter[i] = current_sus/2
-                    new_in_mission_sum += self.sus_meter[i]
-                    self.spy_list.append(i)
-                elif i not in mission and i!= self.player_number:
-                        not_in_mission.append(i)
-                else:
-                    pass
-
-        increase_sus = (self.total_prob - new_in_mission_sum -
-                        not_in_mission_sum) / len(not_in_mission)
-        # update sus_meter for ones who didn't go for the mission
-        for j in not_in_mission:
-            current_sus = self.sus_meter.get(j)
-            self.sus_meter[j] = current_sus + increase_sus
-
     def mission_outcome(self, mission, proposer, betrayals, mission_success):
         '''
         The agents on the mission are distinct and indexed between 0 and number_of_players.
