@@ -1,4 +1,4 @@
-# from our_agent import RandomAgent   # Our project agent
+from our_agent import OurAgent   # Our project agent
 from random_agent import RandomAgent
 from game import Game
 
