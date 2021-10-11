@@ -8,15 +8,58 @@ END = '\033[0m'
 
 
 # !------------------------------------------------------------------------------------------! #
-        #*  5 players (2 spies)  -   5 C 2  =  10   (6)
-        #*  6 players (2 spies)  -   6 C 2  =  15   (10)
-        #*  7 players (3 spies)  -   7 C 3  =  35   (20)
-        #*  8 players (3 spies)  -   8 C 3  =  56   (35)
-        #*  9 players (3 spies)  -   9 C 3  =  84   (56)
-        #* 10 players (4 spies)  -  10 C 4  =  210  (126)
+# *  5 players (2 spies)  -   5 C 2  =  10
+# *  6 players (2 spies)  -   6 C 2  =  15
+# *  7 players (3 spies)  -   7 C 3  =  35
+# *  8 players (3 spies)  -   8 C 3  =  56
+# *  9 players (3 spies)  -   9 C 3  =  84
+# * 10 players (4 spies)  -  10 C 4  =  210
 # !------------------------------------------------------------------------------------------! #
 # todo Research Question: Best resistance player in a 5 player game (in finding the spies)
 
+
+def update_sus_meter(mission, betrayed, all_spies=False):
+    total_prob = 2
+    not_in_mission = []
+    not_in_mission_sum = total_prob
+    new_in_mission_sum = 0
+    if betrayed is True:
+        if all_spies is True:
+            for i in sus_meter.keys():
+                if i in mission:
+                    # update sus and add to spy_list
+                    current_sus = sus_meter.get(i)
+                    not_in_mission_sum -= current_sus
+                    sus_meter[i] = 1
+                    new_in_mission_sum += sus_meter[i]
+                else:
+                    not_in_mission.append(i)
+        else:
+            for i in sus_meter.keys():
+                if i in mission:
+                    # update sus and add to spy_list
+                    current_sus = sus_meter.get(i)
+                    not_in_mission_sum -= current_sus
+                    sus_meter[i] = current_sus * 1.2
+                    new_in_mission_sum += sus_meter[i]
+                else:
+                    not_in_mission.append(i)
+    elif betrayed is False:
+        for i in sus_meter.keys():
+            if i in mission:
+                # update sus and add to spy_list
+                current_sus = sus_meter.get(i)
+                not_in_mission_sum -= current_sus
+                sus_meter[i] = current_sus/1.2
+                new_in_mission_sum += sus_meter[i]
+            else:
+                not_in_mission.append(i)
+
+    increase_sus = (total_prob - new_in_mission_sum -
+                    not_in_mission_sum) / len(not_in_mission)
+    for j in not_in_mission:
+        current_sus = sus_meter.get(j)
+        sus_meter[j] = current_sus + increase_sus
 
 
 def mission_outcome(mission, proposer, betrayals, mission_success):
@@ -28,123 +71,23 @@ def mission_outcome(mission, proposer, betrayals, mission_success):
     mission_success - is True if there were not enough betrayals to cause the mission to fail, False otherwise.
     It is not expected or required for this function to return anything.
     '''
-    
-    # if betrayals == 0 :
-    #     new_prob = 0
-    #     not_in_mission = 0
-    #     if proposer in sus_meter.keys():
-    #         sus_meter[proposer] = (sus_meter[proposer] / 2)
-    #         new_prob += sus_meter[proposer]
 
-    #     for i in range(number_of_players):
-    #         if i in sus_meter.keys():
-    #             if i in mission:
-    #                 current_sus = sus_meter[i]
-    #                 sus_meter[i] = (current_sus/2)
-    #                 new_prob += sus_meter[i]
-    #             else:
-    #                 not_in_mission += 1
-    #     temp = 1 - new_prob
-    #     increase = temp / (not_in_mission)
+    # if good, if there are betrayals => people in mission, increase sus
+    if betrayals == len(mission):
+        # if all agents sent on mission betrayed
+        update_sus_meter(mission, False, True)
 
-    #     for i in range(number_of_players):
-    #         if i in sus_meter.keys():
-    #             if i not in mission and i != proposer:
-    #                 sus_meter[i] += increase
-    print(RED + str(mission) + ", proposer = " + str(proposer) + END)
+    elif betrayals == 0:
+        update_sus_meter(mission, False, False)
+        # for i in mission:
+    else:
+        update_sus_meter(mission, True)
+    # if good, if there are no betrayals => people in mission, less sus
+    # if betrayals == len(mission), all agents on that mission are spies
 
-    # if betrayals == 0:
-    #     sums = 0
-    #     not_in_mission_sums = 0
-    #     not_in_mission = 0
-    #     if proposer in sus_meter.keys():
-    #         not_in_mission_sums = 1 - sus_meter[proposer]
-    #         sus_meter[proposer] = (sus_meter[proposer] / 2)
-    #         sums += sus_meter[proposer]
+    pass
 
-    #     for i in range(number_of_players):
-    #         if i in sus_meter.keys():
-    #             if i in mission:
-    #                 current_sus = sus_meter[i]
-    #                 not_in_mission_sums -= current_sus
-    #                 sus_meter[i] = (current_sus/2)
-    #                 sums += sus_meter[i]
-    #             else:
-    #                 not_in_mission += 1
-    #     temp = (1 - sums) - not_in_mission_sums
-    #     increase = temp / (not_in_mission - 1)
-
-    #     for i in range(number_of_players):
-    #         if i in sus_meter.keys():
-    #             if i not in mission and i != proposer:
-    #                 sus_meter[i] = (sus_meter[i] + increase)
-    if betrayals == 0:
-        sums = 0
-        not_in_mission_sums = 1
-        not_in_mission = 0
-        if player_number != proposer:
-            if proposer in sus_meter.keys():
-                not_in_mission_sums -= sus_meter.get(proposer)
-                sus_meter[proposer] = (sus_meter.get(proposer) / 2)
-                sums += sus_meter.get(proposer)
-
-            for i in range(number_of_players):
-                if i in sus_meter.keys():
-                    if i in mission:
-                        current_sus = sus_meter.get(i)
-                        not_in_mission_sums -= current_sus
-                        sus_meter[i] = (current_sus/2)
-                        sums += sus_meter.get(i)
-                    else:
-                        not_in_mission += 1
-            temp = (1 - sums) - not_in_mission_sums
-            increase = temp / (not_in_mission - 1)
-
-            for i in range(number_of_players):
-                if i in sus_meter.keys():
-                    if i not in mission and i != proposer:
-                        sus_meter[i] = (sus_meter.get(i) + increase)
-        else:
-            for i in range(number_of_players):
-                if i in sus_meter.keys():
-                    if i in mission:
-                        current_sus = sus_meter.get(i)
-                        not_in_mission_sums -= current_sus
-                        sus_meter[i] = (current_sus/2)
-                        sums += sus_meter.get(i)
-                    else:
-                        not_in_mission += 1
-            temp = (1 - sums) - not_in_mission_sums
-            increase = temp / not_in_mission
-            for i in range(number_of_players):
-                if i in sus_meter.keys():
-                    if i not in mission:
-                        sus_meter[i] = (sus_meter.get(i) + increase)
-                    
-    # if betrayals == 0:
-    #     for i in range(number_of_players):
-    #         # People on the mission decrease sus
-    #         if i in sus_meter.keys():
-    #             if i in mission:
-    #                 current_sus = sus_meter[i]
-    #                 # print("- " + str(current_sus))
-    #                 sus_meter[i] = (current_sus / 1.5)
-    #             # People not on the mission increase sus
-    #             else:
-    #                 current_sus = sus_meter[i]
-    #                 sus_meter[i] = (current_sus * 1.5)
-    # else:
-    #     for i in range(number_of_players):
-    #         # People on the mission decrease sus
-    #         if i in sus_meter.keys():
-    #             if i in mission:
-    #                 current_sus = sus_meter[i]
-    #                 # print("- " + str(current_sus))
-    #                 sus_meter[i] = (current_sus * 1.5)
-    #             # People not on the mission increase sus
-    #             else:
-    #                 current_sus = sus_meter[i]
-    #                 sus_meter[i] = (current_sus / 1.5)
+#
 
 
 def print_result():
@@ -155,40 +98,35 @@ def print_result():
     print(YELLOW + "total = " + "{:.2f}".format(total) + END)
 
 
-
-
 sus_meter = dict()
 number_of_players = 5
 player_number = random.randint(0, number_of_players - 1)
 print(GREEN + "-- player id = " + str(player_number) + "\n" + END)
 
 
-
-
 for i in range(number_of_players):
-    # Do not include oneself as probability of being a spy
+    # Do not include one as probability of being a spy
     if i == player_number:
         continue
-    sus_meter.setdefault(i, 1.0 / (number_of_players - 1))
+    sus_meter.setdefault(i, 2.0 / (number_of_players - 1))
     # sus_meter[i] = (1.0 / (number_of_players - 1))
 
-#? 0  :  
-#  1  :  0.5 -> 0.0
-#  2  :  0.5 -> 0.0
-#! 3  :  0.5 -> 1.0
-#! 4  :  0.5 -> 1.0
-    # todo first mission [3, 4], betrayals == 2, betrayals == len(mission)
-
+# ? 1  :
+#  0  :  0.25 -> 0.0
+#  2  :  0.25 -> 0.0
+#! 3  :  0.25 -> 1.0
+#! 4  :  0.25 -> 1.0
+    #
 
 print_result()
-mission_outcome([1,3], 4, 0, True)
+mission_outcome([1, 4], 4, 1, False)
 print("--")
 print_result()
-mission_outcome([1,3], 4, 0, True)
+mission_outcome([1, 3], 4, 1, False)
 print("--")
 print_result()
-mission_outcome([0,4], 4, 0, True)
-# mission_outcome([0,4], 2, 1, False)
+mission_outcome([0, 4], 4, 1, False)
+# # mission_outcome([0,4], 2, 1, False)
 print("--")
 print_result()
 
