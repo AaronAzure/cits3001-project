@@ -183,7 +183,6 @@ class Mission():
         '''
         s = bcolors.BLUE + 'Leader:' + \
             str(self.agents[self.leader_id])+'\nTeam: '
-        print(self.team)
         for i in self.team:
             s += str(self.agents[i])+', '
         s = s[:-2]+bcolors.CYAN+'\nVotes for: '

@@ -174,7 +174,6 @@ class OurAgent(Agent):
 
         # the simple agent always betray when he's in the mission
         if self.is_spy():
-            print("betraying")
             return True
     # up to 5 missions
 
@@ -184,39 +183,44 @@ class OurAgent(Agent):
         new_in_mission_sum = 0
         if betrayed is True:
             if all_spies is True:
-                for i in self.sus_meter.keys():
-                    if i in mission:
+                for i in range(self.number_of_players):
+                    if i in mission and i != self.player_number:
                         # update sus and add to spy_list
                         current_sus = self.sus_meter.get(i)
                         not_in_mission_sum -= current_sus
                         self.sus_meter[i] = 1
                         new_in_mission_sum += self.sus_meter[i]
                         self.spy_list.append(i)
-                    else:
+                    elif i not in mission and i!= self.player_number:
                         not_in_mission.append(i)
+                    else:
+                        pass
             else:
-                if all_spies is True:
-                    for i in self.sus_meter.keys():
-                        if i in mission:
-                            # update sus and add to spy_list
-                            current_sus = self.sus_meter.get(i)
-                            not_in_mission_sum -= current_sus
-                            self.sus_meter[i] = current_sus * 1.2
-                            new_in_mission_sum += self.sus_meter[i]
-                            self.spy_list.append(i)
-                        else:
-                            not_in_mission.append(i)
+                for i in range(self.number_of_players):
+                    if i in mission and i != self.player_number:
+                        # update sus and add to spy_list
+                        current_sus = self.sus_meter.get(i)
+                        not_in_mission_sum -= current_sus
+                        self.sus_meter[i] = current_sus * 1.2
+                        new_in_mission_sum += self.sus_meter[i]
+                        self.spy_list.append(i)
+                    elif i not in mission and i!= self.player_number:
+                        not_in_mission.append(i)
+                    else:
+                        pass
         else:
-            for i in self.sus_meter.keys():
-                if i in mission:
+            for i in range(self.number_of_players):
+                if i in mission and i != self.player_number:
                     # update sus and add to spy_list
                     current_sus = self.sus_meter.get(i)
                     not_in_mission_sum -= current_sus
                     self.sus_meter[i] = current_sus/2
                     new_in_mission_sum += self.sus_meter[i]
                     self.spy_list.append(i)
+                elif i not in mission and i!= self.player_number:
+                        not_in_mission.append(i)
                 else:
-                    not_in_mission.append(i)
+                    pass
 
         increase_sus = (self.total_prob - new_in_mission_sum -
                         not_in_mission_sum) / len(not_in_mission)
@@ -235,31 +239,68 @@ class OurAgent(Agent):
         It is not expected or required for this function to return anything.
         '''
 
-        # # * for our sake
-        # # if spy, just pass
-        # if self.is_spy():
-        #     pass
-        # not_in_mission = []
-        # not_in_mission_sum = self.total_prob
-        # new_in_mission_sum = 0
-        # # if good, if there are betrayals => people in mission, increase sus
-        # if betrayals == len(mission):
-        #     # if all agents sent on mission betrayed
-        #     all_spies = True
-        #     betrayed = True
-        #     self.update_sus_meter(self, mission, betrayed, all_spies)
+        # * for our sake
+        # if spy, just pass
+        if self.is_spy():
+            pass
+        else:
+            not_in_mission = []
+            not_in_mission_sum = self.total_prob
+            new_in_mission_sum = 0
+            # if good, if there are betrayals => people in mission, increase sus
+            if betrayals == len(mission):
+                # if all agents sent on mission betrayed
+                # all_spies = True
+                # betrayed = True
+                # self.update_sus_meter(self, mission, betrayed, all_spies)
+                for i in range(self.number_of_players):
+                    if i in mission and i != self.player_number:
+                        # update sus and add to spy_list
+                        current_sus = self.sus_meter.get(i)
+                        not_in_mission_sum -= current_sus
+                        self.sus_meter[i] = 1
+                        new_in_mission_sum += self.sus_meter[i]
+                        self.spy_list.append(i)
+                    elif i not in mission and i!= self.player_number:
+                        not_in_mission.append(i)
+                    else:
+                        pass
+            elif betrayals == 0:
+                for i in range(self.number_of_players):
+                    if i in mission and i != self.player_number:
+                        # decrease sus due to mission succeeded
+                        current_sus = self.sus_meter.get(i)
+                        not_in_mission_sum -= current_sus
+                        self.sus_meter[i] = current_sus/1.2
+                        new_in_mission_sum += self.sus_meter[i]
+                    elif i not in mission and i!= self.player_number:
+                        # ones who weren't in the mission will increase sus
+                        not_in_mission.append(i)
+                    else:
+                        pass
+            else:
+                for i in range(self.number_of_players):
+                    if i in mission and i != self.player_number:
+                        # increase sus as there are some fails vote
+                        current_sus = self.sus_meter.get(i)
+                        not_in_mission_sum -= current_sus
+                        self.sus_meter[i] = current_sus * 1.2
+                        new_in_mission_sum += self.sus_meter[i]
+                        self.spy_list.append(i)
+                    elif i not in mission and i!= self.player_number:
+                        not_in_mission.append(i)
+                    else:
+                        pass
 
-        # elif betrayals == 0:
-        #     self.update_sus_meter(self, mission)
-        #     # for i in mission:
-        # else:
-        #     betrayed = True
-        #     self.update_sus_meter(self, mission, betrayed)
-
+            increase_sus = (self.total_prob - new_in_mission_sum -
+                        not_in_mission_sum) / len(not_in_mission)
+            # update sus_meter for ones who didn't go on the mission
+            for j in not_in_mission:
+                current_sus = self.sus_meter.get(j)
+                self.sus_meter[j] = current_sus + increase_sus
         # if good, if there are no betrayals => people in mission, less sus
         # if betrayals == len(mission), all agents on that mission are spies
 
-        pass
 
     #
     def round_outcome(self, rounds_complete, missions_failed):
