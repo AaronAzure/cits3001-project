@@ -20,7 +20,7 @@ class OurAgent(Agent):
     voted_to_go_on_mission = []
     betrayal_rate = 0.0  # no_missions_failed / rounds_complete
     number_of_spies = 0
-    cur_round = 0
+    current_mission = 0   # Current
 
     n_rejected_votes = 0;
     n_failed_missions = 0;
@@ -68,6 +68,7 @@ class OurAgent(Agent):
                     continue
                 self.sus_meter.setdefault(
                     i, (1.0 * self.number_of_spies) / (number_of_players - 1))
+
 
     def is_spy(self):   #! DONE
         '''
@@ -139,7 +140,7 @@ class OurAgent(Agent):
             return random.random() > (probability/self.number_of_spies)
         else:
             spies_in = 0
-            betrayals_req = Agent.fails_required[self.number_of_players][self.cur_round]
+            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
             for i in mission:
                 if i in self.spy_list:
                     spies_in += 1
@@ -200,12 +201,12 @@ class OurAgent(Agent):
             for agent in mission:
                 if agent in self.spy_list:
                     spies_count += 1
-            betrayals_req = Agent.fails_required[self.number_of_players][self.cur_round]
+            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
             if spies_count > betrayals_req:
                 return random.random() < (betrayals_req/spies_count)
             return True
-    # up to 5 missions
 
+    # up to 5 missions
     def mission_outcome(self, mission, proposer, betrayals, mission_success):
         '''
         The agents on the mission are distinct and indexed between 0 and number_of_players.
@@ -221,7 +222,7 @@ class OurAgent(Agent):
             self.n_failed_missions += 1
         # * for our sake
         # if spy, just pass
-        self.cur_round += 1
+        self.current_mission += 1
         if self.is_spy():
             pass
         else:
@@ -283,7 +284,6 @@ class OurAgent(Agent):
         # if betrayals == len(mission), all agents on that mission are spies
 
     #
-
     def round_outcome(self, rounds_complete, missions_failed):
         '''
         basic informative function, where the parameters indicate:
@@ -296,7 +296,7 @@ class OurAgent(Agent):
 
         pass
 
-    # * Game over - who won
+    #* Game over - who won
     def game_outcome(self, spies_win, spies):
         '''
         basic informative function, where the parameters indicate:
