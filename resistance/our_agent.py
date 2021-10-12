@@ -1,3 +1,9 @@
+"""
+@name: OurAgent
+@author: Aaron Wee (22702446) and Alex Mai (22638901)
+@about: CITS3001 project 2021 - resistanceAI
+"""
+
 from agent import Agent
 import random
 
@@ -15,6 +21,10 @@ class OurAgent(Agent):
     betrayal_rate = 0.0  # no_missions_failed / rounds_complete
     number_of_spies = 0
     cur_round = 0
+
+    n_rejected_votes = 0;
+    n_failed_missions = 0;
+
     # ? 5 C 2 = 10
     # (1 / number_of_players) %
 
@@ -59,17 +69,15 @@ class OurAgent(Agent):
                 self.sus_meter.setdefault(
                     i, (1.0 * self.number_of_spies) / (number_of_players - 1))
 
-    #! DONE
-
-    def is_spy(self):
+    def is_spy(self):   #! DONE
         '''
         returns True iff the agent is a spy
         '''
         return self.player_number in self.spy_list
 
-    # |                                      |
-    # |  Below is where we need to add code  |
-    # V                                      V
+    #todo |                                      |
+    #todo |  Below is where we need to add code  |
+    #todo V                                      V
 
     # * Return list of the team that will go on the mission of size @param team_size
     def propose_mission(self, team_size, betrayals_required=1):
@@ -113,6 +121,10 @@ class OurAgent(Agent):
         # how does proposer affect our vote?
         # based on who is going on the mission, our vote is affected based on our internal state
 
+        #* Always vote yes on the fifth vote, regardless if resistance or spy
+        if self.n_rejected_votes >= 4:
+            return True
+
         # resistance
         if not self.is_spy():
             probability = self.total_prob
@@ -145,9 +157,17 @@ class OurAgent(Agent):
         votes    - is a dictionary mapping player indexes to Booleans (True if they voted for the mission, False otherwise).
         No return value is required or expected.
         '''
-        # * for our own sake
         # Based on votes, if we suspect someone to be a spy - if they accept: what happen?
         # Based on votes, if we suspect someone to be a spy - if they reject: what happen?
+
+        #* Did the team can rejected?
+        n_approved = 0
+        for val in votes.values():
+            if val:
+                n_approved += 1
+        if 2*n_approved <= len(self.number_of_players):
+            self.n_rejected_votes += 1
+
         agent_involved = False
         if self.is_spy():
             pass
@@ -195,7 +215,10 @@ class OurAgent(Agent):
         mission_success - is True if there were not enough betrayals to cause the mission to fail, False otherwise.
         It is not expected or required for this function to return anything.
         '''
+        self.n_rejected_votes = 0   # Reset number of reject votes for next mission
 
+        if not mission_success:
+            self.n_failed_missions += 1
         # * for our sake
         # if spy, just pass
         self.cur_round += 1
