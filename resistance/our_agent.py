@@ -174,7 +174,15 @@ class OurAgent(Agent):
         # ignore proposer, does not affect our decision
 
         # the simple agent always betray when he's in the mission
+        # reduce the betrayal rate if there are many spies in the mission
         if self.is_spy():
+            spies_count = 0
+            for agent in mission:
+                if agent in self.spy_list:
+                    spies_count += 1
+            betrayals_req = Agent.fails_required[self.number_of_players][self.cur_round]
+            if spies_count > betrayals_req:
+                return random.random() < (betrayals_req/spies_count)
             return True
     # up to 5 missions
 
