@@ -22,8 +22,8 @@ class OurAgent(Agent):
     number_of_spies = 0
     current_mission = 0   # Current
 
-    n_rejected_votes = 0;
-    n_failed_missions = 0;
+    n_rejected_votes = 0
+    n_failed_missions = 0
 
     # ? 5 C 2 = 10
     # (1 / number_of_players) %
@@ -76,9 +76,9 @@ class OurAgent(Agent):
         '''
         return self.player_number in self.spy_list
 
-    #todo |                                      |
-    #todo |  Below is where we need to add code  |
-    #todo V                                      V
+    # todo |                                      |
+    # todo |  Below is where we need to add code  |
+    # todo V                                      V
 
     # * Return list of the team that will go on the mission of size @param team_size
     def propose_mission(self, team_size, betrayals_required=1):
@@ -122,7 +122,7 @@ class OurAgent(Agent):
         # how does proposer affect our vote?
         # based on who is going on the mission, our vote is affected based on our internal state
 
-        #* Always vote yes on the fifth vote, regardless if resistance or spy
+        # * Always vote yes on the fifth vote, regardless if resistance or spy
         if self.n_rejected_votes >= 4:
             return True
 
@@ -161,7 +161,7 @@ class OurAgent(Agent):
         # Based on votes, if we suspect someone to be a spy - if they accept: what happen?
         # Based on votes, if we suspect someone to be a spy - if they reject: what happen?
 
-        #* Did the team can rejected?
+        # * Did the team can rejected?
         n_approved = 0
         for val in votes.values():
             if val:
@@ -204,7 +204,11 @@ class OurAgent(Agent):
             betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
             if spies_count > betrayals_req:
                 return random.random() < (betrayals_req/spies_count)
-            return True
+            elif spies_count == betrayals_req:
+                return True
+            # No point in sabotaging
+            else:
+                return False
 
     # up to 5 missions
     def mission_outcome(self, mission, proposer, betrayals, mission_success):
