@@ -1,0 +1,354 @@
+"""
+@name: OurAgent
+@author: Aaron Wee (22702446) and Alex Mai (22638901)
+@about: CITS3001 project 2021 - resistanceAI
+"""
+
+from agent import Agent
+import random
+
+
+class garboa(Agent):
+    '''A sample implementation of a random agent in the game The Resistance'''
+    # ? 5 C 2 = 10
+    # (1 / number_of_players) %
+
+    # ? 2 spies out of 4
+    # 0 1 2 3 , 0 = 25% -> 30%   (spies)
+    # 0 1 2 3 , 1 = 25% -> 30%   (spies)
+    # 0 1 2 3 , 2 = 25% -> 25%
+    # 0 1 2 3 , 3 = 25% -> 15%
+
+    # 0 1 2 3 4 | 0 = 40% -> 60%  #! (spies)
+    # 0 1 2 3 4 | 1 = 10% -> 15%
+    # 0 1 2 3 4 | 2 = 05% -> 00%
+    # 0 1 2 3 4 | 3 = 20% -> 10%
+    # 0 1 2 3 4 | 4 = 25% -> 35%   #! (spies)
+
+    def __init__(self, name='Rando'):
+        '''
+        Initialises the agent.
+        Nothing to do here.
+        '''
+        self.name = name
+
+    def new_game(self, number_of_players, player_number, spy_list):
+        '''
+        initialises the game - informing the agent of the 
+        number_of_players    - the player_number (an id number for the agent in the game),
+        and a list of agent indexes which are the spies, if the agent is a spy, or empty otherwise
+        '''
+        self.number_of_players = number_of_players
+        self.player_number = player_number
+        print("player number is", player_number)
+        self.spy_list = spy_list
+        self.players = [i for i in range(number_of_players)]
+
+        # Reset
+        self.current_mission = 0
+        self.n_rejected_votes = 0
+        self.n_failed_missions = 0
+
+        # * if not spy internal state / memory (probability of index agent of being a spy)
+        # int(index) -> float(probability of being a spy)
+        self.sus_meter = {}
+        # set the number of spies base on table size
+        self.number_of_spies = Agent.spy_count.get(number_of_players)
+        # generate sus_meter for players, default 0
+        for i in self.players:
+            self.sus_meter.setdefault(i, 0)
+
+    def is_spy(self):  # ! DONE
+        '''
+        returns True iff the agent is a spy
+        '''
+        return self.player_number in self.spy_list
+
+    # todo |                                      |
+    # todo |  Below is where we need to add code  |
+    # todo V                                      V
+
+    # * Return list of the team that will go on the mission of size @param team_size
+    def propose_mission(self, team_size, betrayals_required=1):
+        '''
+        Expects a team_size list of distinct agents with id between 0 (inclusive) and number_of_players (exclusive)
+        to be returned. 
+        betrayals_required - are the number of betrayals required for the mission to fail.
+        '''
+        team = []
+        # * Are we spy
+        if self.is_spy():
+            # pick up to @param betrayals_req
+            team.append(self.player_number)
+            # add ourselves and choose least sus spies up to @param betrayals_require
+            for i in sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[0:betrayals_required-1]:
+                if i not in team:
+                    team.append(i)
+            if len(team) < betrayals_required:
+                team.append(sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[
+                            betrayals_required])
+            # fill the rest of team with least sus resistance players
+            for i in sorted([i for i in self.sus_meter.keys() if i not in self.spy_list], key=lambda i: self.sus_meter[i]):
+                team.append(i)
+                if len(team) == team_size:
+                    break
+        else:
+            # as resistance
+            # add ourselves and least sus agents
+            team.append(self.player_number)
+            count = 0
+            # sort the sus_meter in ascending order
+            sus_rank = sorted([i for i in self.sus_meter.keys(
+            ) if i != self.player_number], key=lambda i: self.sus_meter[i])
+            while len(team) < team_size:
+                team.append(sus_rank[count])
+                count += 1
+        return team
+
+    def vote(self, mission, proposer):
+        '''
+        The agents on the mission are distinct and indexed between 0 and number_of_players.
+        mission  - is a list of agents (index) to be sent on a mission. 
+        proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
+        The function should return True if the vote is for the mission, and False if the vote is against the mission.
+        '''
+        # how does proposer affect our vote?
+        # based on who is going on the mission, our vote is affected based on our internal state
+
+        # * Always vote yes on the first mission, regardless if resistance or spy
+        print("current mission is", self.current_mission)
+        if self.current_mission == 0:
+            return True
+
+        # * Always vote yes on the fifth vote, regardless if resistance or spy
+        if self.n_rejected_votes >= 4:
+            return True
+
+        sus_rank = sorted([i for i in self.sus_meter.keys()],
+                          key=lambda i: self.sus_meter[i])
+        sus_others = [p for p in sus_rank if not p == self.player_number]
+        most_sus = []
+        # len(most_sus) = number_of_spies
+        # make a list of current most sus agents
+        for i in range(-1, -self.number_of_spies-1, 1):
+            most_sus.append(sus_others[i])
+
+        # resistance
+        if not self.is_spy():
+            # vote against if there r guaranteed spy in the proposed team
+            if (self.number_of_players - self.number_of_spies == len(mission)):
+                if self.player_number not in mission:
+                    return False
+                # if there is someone in the top sus list, vote against
+                for agent in sus_others:
+                    if agent in mission:
+                        return False
+            # vote against any team that include top 2 most sus
+            if sus_others[-1] in mission or sus_others[-2] in mission:
+                return False
+            for i in mission:
+                # vote against any team that involves spy
+                if i in self.spy_list:
+                    return False
+            # * If there are no guaranteed spies, and we're in the mission, vote for
+            if self.player_number in mission:
+                return True
+            return True
+        # spy
+        else:
+            spies_in = 0
+            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+            print("betrayals require is", betrayals_req)
+            for i in mission:
+                if i in self.spy_list:
+                    spies_in += 1
+            print("spies in are", spies_in)
+            if spies_in < betrayals_req:
+                return False
+            # There are enough spies to successfully sabotage
+            else:
+                return True
+        # return random.random()<0.5
+
+    def vote_outcome(self, mission, proposer, votes):
+        '''
+        The agents on the mission are distinct and indexed between 0 and number_of_players.
+        mission  - is a list of agents to be sent on a mission. 
+        proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
+        votes    - is a dictionary mapping player indexes to Booleans (True if they voted for the mission, False otherwise).
+        No return value is required or expected.
+        '''
+        # from what we currently see in game.py, votes is a list of player who voted for the mission, NOT DICTIONARY!!!
+        # Based on votes, if we suspect someone to be a spy - if they accept: what happen?
+        # Based on votes, if we suspect someone to be a spy - if they reject: what happen?
+
+        # * Did the team get rejected?
+        n_approved = 0
+        n_approved = len(votes)
+        # * Not majority vote, increment number of rejected votes
+        if 2*n_approved <= self.number_of_players:
+            self.n_rejected_votes += 1
+
+        # if fifth vote is rejected, assume all who rejected are spies (playing optimally)
+        if self.n_rejected_votes >= 5:
+            for agent in votes:
+                self.spy_list.append(agent)
+            #! if len(self.spy_list) > self.spy_count:
+
+        # if someone vote against in the first mission
+        if self.current_mission == 0:
+            for agent in range(self.number_of_players):
+                if agent not in votes:
+                    self.sus_meter[agent] += 20
+
+        # if not first mission
+        if self.current_mission > 0 and self.n_rejected_votes < 5:
+            # When there there is a spy NOT in the team, voting AGAINST the team, let's assume there are no spies on the team
+            if len(list(filter(lambda agent: self.sus_meter[agent] >= 700 and agent not in mission and agent not in votes, self.players))) > 0:
+                for i in mission:
+                    self.sus_meter[i] -= 450
+            mission_filtered = list(filter(
+                lambda i: self.sus_meter[i] < 700, mission))
+
+            # if we are not in the mission with the specific mission length, the team is guaranteed containing spies (as what a resistance will think)
+            if self.player_number not in mission and len(mission) == self.number_of_players - self.number_of_spies:
+                # anyone not in the mission and vote for is sus (as spy wants the mission team to include spies)
+                not_mission_voted_true = [
+                    i for i in self.players if i not in mission and i in votes]
+                if len(mission_filtered) < self.number_of_players - self.number_of_spies:
+                    for agent in not_mission_voted_true:
+                        self.sus_meter[agent] += 400
+                    return
+                for agent in not_mission_voted_true:
+                    self.sus_meter[agent] += 300
+        self.last_votes = votes
+
+    def betray(self, mission, proposer):
+        '''
+        The agents on the mission are distinct and indexed between 0 and number_of_players, and include this agent.
+        mission  - is a list of agents to be sent on a mission. 
+        proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
+        The method should return True if this agent chooses to betray the mission, and False otherwise. 
+        By default, spies will betray 30% of the time. 
+        '''
+        # based on how close we winning (game state) - betrayal rate
+
+        # ignore proposer, does not affect our decision
+
+        # the simple agent always betray when he's in the mission
+        # reduce the betrayal rate if there are many spies in the mission
+        if self.is_spy():
+            spies_count = 0
+            for agent in mission:
+                if agent in self.spy_list:
+                    spies_count += 1
+            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+            if spies_count > betrayals_req:
+                return random.random() < (betrayals_req/spies_count)
+            elif spies_count == betrayals_req:
+                return True
+            else:
+                return False
+    # up to 5 missions
+
+    def mission_outcome(self, mission, proposer, betrayals, mission_success):
+        '''
+        The agents on the mission are distinct and indexed between 0 and number_of_players.
+        mission         - is a list of agents to be sent on a mission. 
+        proposer        - is an int between 0 and number_of_players and is the index of the player who proposed the mission.
+        betrayals       - is the number of people on the mission who betrayed the mission, 
+        mission_success - is True if there were not enough betrayals to cause the mission to fail, False otherwise.
+        It is not expected or required for this function to return anything.
+        '''
+        # * fact resistance = -1000
+        # * fact spy = 1000
+        # sus ~ 150
+        self.n_rejected_votes = 0   # Reset number of reject votes for next mission
+        if not mission_success:
+            self.n_failed_missions += 1
+        # * for our sake
+        self.current_mission += 1
+        not_in_mission = [p for p in self.players if p not in mission]
+        if betrayals > 0:
+            not_betrayed = len(mission) - betrayals
+            # not involved in mission or playing as spy
+            if self.player_number not in mission or self.is_spy():
+                if not_betrayed == 0:
+                    for agent in mission:
+                        self.sus_meter[agent] += 1000
+                        self.spy_list.append(agent)
+                    for agent in not_in_mission:
+                        self.sus_meter[agent] -= (1000 *
+                                                  betrayals) / len(not_in_mission)
+                elif betrayals == self.number_of_spies and not_betrayed > 0:
+                    for agent in mission:
+                        self.sus_meter[agent] += 150
+                    for agent in not_in_mission:
+                        self.sus_meter[agent] -= 1000
+                elif betrayals != self.number_of_spies and not_betrayed > 0:
+                    if not_betrayed == 4:
+                        for agent in mission:
+                            self.sus_meter[agent] += 25
+                        for agent in not_in_mission:
+                            self.sus_meter[agent] -= 25
+                    elif not_betrayed == 3:
+                        for agent in mission:
+                            self.sus_meter[agent] += 50
+                        for agent in not_in_mission:
+                            self.sus_meter[agent] -= 50
+                    elif not_betrayed == 2:
+                        for agent in mission:
+                            self.sus_meter[agent] += 100
+                        for agent in not_in_mission:
+                            self.sus_meter[agent] -= 100
+                    elif not_betrayed == 1:
+                        for agent in mission:
+                            self.sus_meter[agent] += 200
+                        for agent in not_in_mission:
+                            self.sus_meter[agent] -= 200
+            # playing as resistance and involved in mission
+            elif self.player_number in mission and not self.is_spy():
+                if betrayals == len(mission) - 1:
+                    for agent in [p for p in mission if not p == self.player_number]:
+                        self.sus_meter[agent] += 1000
+                        self.spy_list.append(agent)
+                    self.sus_meter[self.player_number] += 100
+                    if betrayals == self.number_of_spies:
+                        for agent in not_in_mission:
+                            self.sus_meter[agent] -= 1000
+                    else:
+                        for agent in not_in_mission:
+                            self.sus_meter[agent] -= 100
+            if not self.is_spy():
+                if self.current_mission > 0 and self.current_mission != 3:
+                    self.sus_meter[proposer] += 50
+                    for p in filter(lambda i: i != proposer, self.last_votes):
+                        self.sus_meter[p] += 25
+                if self.current_mission == 3 and not mission_success:
+                    for i in [i for i in self.last_votes if i not in mission]:
+                        self.sus_meter[i] += 700
+        else:
+            for agent in mission:
+                self.sus_meter[agent] -= 25
+
+    def round_outcome(self, rounds_complete, missions_failed):
+        '''
+        basic informative function, where the parameters indicate:
+        rounds_complete - the number of rounds (0-5) that have been completed
+        missions_failed - the number of missions (0-3) that have failed.
+        '''
+        # * for our own sake
+        # ratio betw rounds_complete : missions_failed, how affect us?
+        # called from
+
+        pass
+
+    # * Game over - who won
+    def game_outcome(self, spies_win, spies):
+        '''
+        basic informative function, where the parameters indicate:
+        spies_win - True iff the spies caused 3+ missions to fail
+        spies     - a list of the player indexes for the spies.
+        '''
+        # LITERALLY do nothing
+        pass

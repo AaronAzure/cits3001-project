@@ -2,6 +2,7 @@ from bcolors import bcolors
 from agent import Agent
 from our_agent import OurAgent
 from random_agent import RandomAgent
+from garboA import garboa
 import random
 
 
