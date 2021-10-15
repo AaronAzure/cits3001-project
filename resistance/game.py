@@ -2,6 +2,7 @@ from bcolors import bcolors
 from agent import Agent
 from our_agent import OurAgent
 from random_agent import RandomAgent
+from garboA import garboa
 import random
 
 
@@ -67,6 +68,8 @@ class Game:
         else:
             s = s + bcolors.MAGENTA + '\n\nThe Resistance failed!'
         s = s + bcolors.RED + '\nThe spies were agents: ' + \
+            str(self.spies) + '\n' + bcolors.RESET
+        s = s + bcolors.GREEN + '\nYou: ' + \
             str(self.spies) + '\n' + bcolors.RESET
         return s
 

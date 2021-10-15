@@ -1,9 +1,10 @@
 from our_agent import OurAgent   # Our project agent
 from random_agent import RandomAgent
+from garboA import garboa
 from game import Game
 
 agents = [
-    OurAgent(name='r0'),
+    garboa(name='r0'),
     RandomAgent(name='r1'),
     RandomAgent(name='r2'),
     RandomAgent(name='r3'),
