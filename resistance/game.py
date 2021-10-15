@@ -69,6 +69,8 @@ class Game:
             s = s + bcolors.MAGENTA + '\n\nThe Resistance failed!'
         s = s + bcolors.RED + '\nThe spies were agents: ' + \
             str(self.spies) + '\n' + bcolors.RESET
+        s = s + bcolors.GREEN + '\nYou: ' + \
+            str(self.spies) + '\n' + bcolors.RESET
         return s
 
 

@@ -7,23 +7,11 @@
 from agent import Agent
 import random
 
+from bcolors import bcolors
+
 
 class garboa(Agent):
     '''A sample implementation of a random agent in the game The Resistance'''
-    # ? 5 C 2 = 10
-    # (1 / number_of_players) %
-
-    # ? 2 spies out of 4
-    # 0 1 2 3 , 0 = 25% -> 30%   (spies)
-    # 0 1 2 3 , 1 = 25% -> 30%   (spies)
-    # 0 1 2 3 , 2 = 25% -> 25%
-    # 0 1 2 3 , 3 = 25% -> 15%
-
-    # 0 1 2 3 4 | 0 = 40% -> 60%  #! (spies)
-    # 0 1 2 3 4 | 1 = 10% -> 15%
-    # 0 1 2 3 4 | 2 = 05% -> 00%
-    # 0 1 2 3 4 | 3 = 20% -> 10%
-    # 0 1 2 3 4 | 4 = 25% -> 35%   #! (spies)
 
     def __init__(self, name='Rando'):
         '''
@@ -44,7 +32,7 @@ class garboa(Agent):
         self.spy_list = spy_list
         self.players = [i for i in range(number_of_players)]
 
-        # Reset
+        #* Record game state
         self.current_mission = 0
         self.n_rejected_votes = 0
         self.n_failed_missions = 0
@@ -58,15 +46,12 @@ class garboa(Agent):
         for i in self.players:
             self.sus_meter.setdefault(i, 0)
 
-    def is_spy(self):  # ! DONE
+    def is_spy(self):
         '''
         returns True iff the agent is a spy
         '''
         return self.player_number in self.spy_list
 
-    # todo |                                      |
-    # todo |  Below is where we need to add code  |
-    # todo V                                      V
 
     # * Return list of the team that will go on the mission of size @param team_size
     def propose_mission(self, team_size, betrayals_required=1):
@@ -78,9 +63,9 @@ class garboa(Agent):
         team = []
         # * Are we spy
         if self.is_spy():
-            # pick up to @param betrayals_req
+            # Pick up to (@param betrayals_required) to go on the mission
             team.append(self.player_number)
-            # add ourselves and choose least sus spies up to @param betrayals_require
+            # add ourselves and choose least sus spies up to @param betrayals_required
             for i in sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[0:betrayals_required-1]:
                 if i not in team:
                     team.append(i)
@@ -125,49 +110,43 @@ class garboa(Agent):
             return True
 
         sus_rank = sorted([i for i in self.sus_meter.keys()],
-                          key=lambda i: self.sus_meter[i])
-        sus_others = [p for p in sus_rank if not p == self.player_number]
-        most_sus = []
-        # len(most_sus) = number_of_spies
-        # make a list of current most sus agents
-        for i in range(-1, -self.number_of_spies-1, 1):
-            most_sus.append(sus_others[i])
+                          key=lambda i: self.sus_meter[i], reverse=True)
+        if self.player_number in sus_rank:
+            sus_rank.remove(self.player_number)
+        print(bcolors.RED ,"--- ",sus_rank, bcolors.RESET)
+        print(bcolors.RED ,"--- ",self.sus_meter, bcolors.RESET)
 
         # resistance
         if not self.is_spy():
-            # vote against if there r guaranteed spy in the proposed team
+            # vote against if there are guaranteed spy in the proposed team
             if (self.number_of_players - self.number_of_spies == len(mission)):
                 if self.player_number not in mission:
                     return False
-                # if there is someone in the top sus list, vote against
-                for agent in sus_others:
-                    if agent in mission:
-                        return False
-            # vote against any team that include top 2 most sus
-            if sus_others[-1] in mission or sus_others[-2] in mission:
-                return False
-            for i in mission:
-                # vote against any team that involves spy
-                if i in self.spy_list:
+            # if there is someone in the top sus list, vote against
+            for i in range(self.number_of_spies):
+                if sus_rank[i] in mission:
                     return False
-            # * If there are no guaranteed spies, and we're in the mission, vote for
-            if self.player_number in mission:
-                return True
+            # vote against if there are guaranteed spy in the proposed team
+            if self.spy_list in mission:
+                return False
+            # if we are not in the mission, then depending on the current mission, vote against
+            if self.player_number not in mission and (random.Random() < (0.1 * (self.current_mission+1))):
+                return False
             return True
         # spy
         else:
             spies_in = 0
             betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
             print("betrayals require is", betrayals_req)
+
+            # Vote against, if there is not enough spies to betray
             for i in mission:
                 if i in self.spy_list:
                     spies_in += 1
             print("spies in are", spies_in)
-            if spies_in < betrayals_req:
-                return False
-            # There are enough spies to successfully sabotage
-            else:
-                return True
+
+            # Vote for if there are enough spies to successfully sabotage
+            return (spies_in >= betrayals_req)
         # return random.random()<0.5
 
     def vote_outcome(self, mission, proposer, votes):
@@ -190,10 +169,10 @@ class garboa(Agent):
             self.n_rejected_votes += 1
 
         # if fifth vote is rejected, assume all who rejected are spies (playing optimally)
-        if self.n_rejected_votes >= 5:
-            for agent in votes:
-                self.spy_list.append(agent)
-            #! if len(self.spy_list) > self.spy_count:
+        if not self.is_spy():
+            if self.n_rejected_votes >= 5:
+                for agent in votes:
+                    self.spy_list.append(agent)
 
         # if someone vote against in the first mission
         if self.current_mission == 0:
@@ -203,18 +182,17 @@ class garboa(Agent):
 
         # if not first mission
         if self.current_mission > 0 and self.n_rejected_votes < 5:
-            # When there there is a spy NOT in the team, voting AGAINST the team, let's assume there are no spies on the team
+            # When there is a spy NOT in the team, voting AGAINST the team, let's assume there are no spies on the team
             if len(list(filter(lambda agent: self.sus_meter[agent] >= 700 and agent not in mission and agent not in votes, self.players))) > 0:
                 for i in mission:
                     self.sus_meter[i] -= 450
-            mission_filtered = list(filter(
-                lambda i: self.sus_meter[i] < 700, mission))
+            mission_filtered = list(filter(lambda i: self.sus_meter[i] < 700, mission))
 
-            # if we are not in the mission with the specific mission length, the team is guaranteed containing spies (as what a resistance will think)
+            # if we are not in the mission with the specific mission length, the team is guaranteed to contain spies (as what a resistance will think)
             if self.player_number not in mission and len(mission) == self.number_of_players - self.number_of_spies:
-                # anyone not in the mission and vote for is sus (as spy wants the mission team to include spies)
-                not_mission_voted_true = [
-                    i for i in self.players if i not in mission and i in votes]
+                # anyone not in the mission and vote FOR is sus (as spy wants the mission team to include spies)
+                not_mission_voted_true = [i for i in self.players if i not in mission and i in votes]
+
                 if len(mission_filtered) < self.number_of_players - self.number_of_spies:
                     for agent in not_mission_voted_true:
                         self.sus_meter[agent] += 400
@@ -238,17 +216,26 @@ class garboa(Agent):
         # the simple agent always betray when he's in the mission
         # reduce the betrayal rate if there are many spies in the mission
         if self.is_spy():
+            #* Reduce the betrayal rate if there are many spies in the mission
             spies_count = 0
             for agent in mission:
                 if agent in self.spy_list:
                     spies_count += 1
             betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+
+            #* If there are more spies than the required number of betrayals
             if spies_count > betrayals_req:
+                #* Less likely to betray
                 return random.random() < (betrayals_req/spies_count)
+
+            #* If the required number of betrayals is equal to number of spies in the mission
             elif spies_count == betrayals_req:
+                #* 100% betray
                 return True
-            else:
-                return False
+
+            #* If the required number of betrayals is more than to number of spies in the mission,
+            #* then it is pointless to betray, and try to blend in
+            return False
     # up to 5 missions
 
     def mission_outcome(self, mission, proposer, betrayals, mission_success):
@@ -276,42 +263,31 @@ class garboa(Agent):
                 if not_betrayed == 0:
                     for agent in mission:
                         self.sus_meter[agent] += 1000
-                        self.spy_list.append(agent)
+                        if not self.is_spy():
+                            self.spy_list.append(agent)
                     for agent in not_in_mission:
-                        self.sus_meter[agent] -= (1000 *
-                                                  betrayals) / len(not_in_mission)
+                        self.sus_meter[agent] -= (1000 * betrayals) / len(not_in_mission)
+
                 elif betrayals == self.number_of_spies and not_betrayed > 0:
                     for agent in mission:
                         self.sus_meter[agent] += 150
                     for agent in not_in_mission:
                         self.sus_meter[agent] -= 1000
+
                 elif betrayals != self.number_of_spies and not_betrayed > 0:
-                    if not_betrayed == 4:
-                        for agent in mission:
-                            self.sus_meter[agent] += 25
-                        for agent in not_in_mission:
-                            self.sus_meter[agent] -= 25
-                    elif not_betrayed == 3:
-                        for agent in mission:
-                            self.sus_meter[agent] += 50
-                        for agent in not_in_mission:
-                            self.sus_meter[agent] -= 50
-                    elif not_betrayed == 2:
-                        for agent in mission:
-                            self.sus_meter[agent] += 100
-                        for agent in not_in_mission:
-                            self.sus_meter[agent] -= 100
-                    elif not_betrayed == 1:
-                        for agent in mission:
-                            self.sus_meter[agent] += 200
-                        for agent in not_in_mission:
-                            self.sus_meter[agent] -= 200
+                    total_n_people_on_mission = 5
+                    for agent in mission:
+                        self.sus_meter[agent] += (25 * (total_n_people_on_mission - not_betrayed))
+                    for agent in not_in_mission:
+                        self.sus_meter[agent] -= (25 * (total_n_people_on_mission - not_betrayed))
+
             # playing as resistance and involved in mission
             elif self.player_number in mission and not self.is_spy():
                 if betrayals == len(mission) - 1:
                     for agent in [p for p in mission if not p == self.player_number]:
                         self.sus_meter[agent] += 1000
-                        self.spy_list.append(agent)
+                        if not self.is_spy():
+                            self.spy_list.append(agent)
                     self.sus_meter[self.player_number] += 100
                     if betrayals == self.number_of_spies:
                         for agent in not_in_mission:
@@ -319,11 +295,14 @@ class garboa(Agent):
                     else:
                         for agent in not_in_mission:
                             self.sus_meter[agent] -= 100
+
             if not self.is_spy():
                 if self.current_mission > 0 and self.current_mission != 3:
                     self.sus_meter[proposer] += 50
                     for p in filter(lambda i: i != proposer, self.last_votes):
                         self.sus_meter[p] += 25
+                
+                #* Mission 4 that usually require 2 betrayals
                 if self.current_mission == 3 and not mission_success:
                     for i in [i for i in self.last_votes if i not in mission]:
                         self.sus_meter[i] += 700
