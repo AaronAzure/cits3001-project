@@ -1,7 +1,7 @@
 from agent import Agent
 import random
 
-class pandsbot(Agent):        
+class PandsBot(Agent):        
     '''A sample implementation of a random agent in the game The Resistance'''
 
     def __init__(self, name='Rando'):
@@ -49,7 +49,7 @@ class pandsbot(Agent):
 
     def maybe_last_turn(self):
         '''1 more round to win/lose?'''
-        return (self.spy_wins == 2) or (res_wins == 2)
+        return (self.spy_wins == 2) or (self.res_wins == 2)
 
     # def _getBadPair(self):
     #     #get the most suspicious pair
@@ -103,9 +103,17 @@ class pandsbot(Agent):
         By default, spies will betray 30% of the time. 
         '''
         if self.is_spy():
+            #* Reduce the betrayal rate if there are many spies in the mission
             spies_count = len([p for p in mission if p in self.spy_list])
             betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
-            return spies_count==betrayals_req or self.maybe_last_turn() 
+
+            #* If there are more spies than the required number of betrayals
+            if spies_count > betrayals_req:
+                #* Less likely to betray
+                return random.random() < (betrayals_req/spies_count)
+
+            #* If the required number of betrayals is equal to number of spies in the mission
+            return spies_count == betrayals_req or self.maybe_last_turn() 
 
     def mission_outcome(self, mission, proposer, betrayals, mission_success):
         '''
