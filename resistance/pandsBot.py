@@ -70,7 +70,20 @@ class RandomAgent(Agent):
         By default, spies will betray 30% of the time. 
         '''
         if self.is_spy():
-            return random.random()<0.3
+            #* Reduce the betrayal rate if there are many spies in the mission
+            spies_count = 0
+            for agent in mission:
+                if agent in self.spy_list:
+                    spies_count += 1
+            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+
+            #* If there are more spies than the required number of betrayals
+            if spies_count > betrayals_req:
+                #* Less likely to betray
+                return random.random() < (betrayals_req/spies_count)
+
+            #* If the required number of betrayals is equal to number of spies in the mission
+            return (spies_count == betrayals_req)
 
     def mission_outcome(self, mission, proposer, betrayals, mission_success):
         '''
