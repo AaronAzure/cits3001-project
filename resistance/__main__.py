@@ -1,11 +1,13 @@
 from our_agent import OurAgent   # Our project agent
 from random_agent import RandomAgent
 from garboA import garboa
-from pandsBot import pandsbot
+# from pandsBot import PandsBot
 from game import Game
 
+from bayes_agent import BayesAgent
+
 agents = [
-    pandsbot(name='r0'),
+    BayesAgent(name='r0'),
     RandomAgent(name='r1'),
     RandomAgent(name='r2'),
     RandomAgent(name='r3'),

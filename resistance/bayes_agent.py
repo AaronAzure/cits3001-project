@@ -8,12 +8,13 @@ from agent import Agent
 import random
 
 from bcolors import bcolors
+import time
 
 
 class BayesAgent(Agent):
     '''An agent which utilise the Bayesian Analysis in the game The Resistance'''
 
-    def __init__(self, name='Rando'):
+    def __init__(self, name='Bayes'):
         '''
         Initialises the agent.
         Nothing to do here.
@@ -30,9 +31,11 @@ class BayesAgent(Agent):
         self.player_number = player_number
         self.spy_list = spy_list
         self.players = [i for i in range(number_of_players)]
+        self.others = [i for i in range(number_of_players) if i != self.player_number]
         self.number_of_spies = Agent.spy_count.get(number_of_players)
         
         print("player number is", player_number)
+        time.sleep(1)
 
         #* Record game state
         self.current_mission = 0
@@ -47,7 +50,7 @@ class BayesAgent(Agent):
         # set the number of spies base on table size
         # generate sus_meter for players, default 0
         spy_chance = float(self.number_of_spies/self.number_of_players)
-        for i in self.players:
+        for i in self.others:
             self.sus_meter.setdefault(i, spy_chance)
 
     def is_spy(self):
@@ -68,33 +71,30 @@ class BayesAgent(Agent):
         betrayals_required - are the number of betrayals required for the mission to fail.
         '''
         team = []
-        # * Are we spy
-        if self.is_spy():
-            # Pick up to (@param betrayals_required) to go on the mission
-            team.append(self.player_number)
-            # add ourselves and choose least sus spies up to @param betrayals_required
-            for i in sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[0:betrayals_required-1]:
-                if i not in team:
-                    team.append(i)
-            if len(team) < betrayals_required:
-                team.append(sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[
-                            betrayals_required])
-            # fill the rest of team with least sus resistance players
-            for i in sorted([i for i in self.sus_meter.keys() if i not in self.spy_list], key=lambda i: self.sus_meter[i]):
-                team.append(i)
-                if len(team) == team_size:
-                    break
-        else:
-            # as resistance
-            # add ourselves and least sus agents
-            team.append(self.player_number)
-            count = 0
-            # sort the sus_meter in ascending order
-            sus_rank = sorted([i for i in self.sus_meter.keys(
-            ) if i != self.player_number], key=lambda i: self.sus_meter[i])
-            while len(team) < team_size:
-                team.append(sus_rank[count])
-                count += 1
+        # Always include ourselves
+        team.append(self.player_number)
+
+        #* Player is a spy
+        # if self.is_spy():
+        #     # Pick up to (@param betrayals_required) to go on the mission
+        #     for i in sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[0:betrayals_required-1]:
+        #         if i not in team:
+        #             team.append(i)
+        #     if len(team) < betrayals_required:
+        #         team.append(sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[
+        #                     betrayals_required])
+        #     # fill the rest of team with least sus resistance players
+        #     for i in sorted([i for i in self.sus_meter.keys() if i not in self.spy_list], key=lambda i: self.sus_meter[i]):
+        #         team.append(i)
+        #         if len(team) == team_size:
+        #             break
+        #* Player is resistance
+        # else:
+        #     count = 0
+        #     sus_rank = sorted([i for i in self.sus_meter.keys() if i != self.player_number], key=lambda i: self.sus_meter[i])
+        #     while len(team) < team_size:
+        #         team.append(sus_rank[count])
+        #         count += 1
         return team
 
     def vote(self, mission, proposer):
@@ -104,6 +104,7 @@ class BayesAgent(Agent):
         proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
+        return True
 
     def vote_outcome(self, mission, proposer, votes):
         '''
@@ -113,6 +114,7 @@ class BayesAgent(Agent):
         votes    - is a dictionary mapping player indexes to Booleans (True if they voted for the mission, False otherwise).
         No return value is required or expected.
         '''
+        pass
 
     def betray(self, mission, proposer):
         '''
