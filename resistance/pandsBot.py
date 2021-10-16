@@ -29,13 +29,17 @@ class pandsbot(Agent):
         self.res_wins = 0
         # set the number of spies base on table size
         self.number_of_spies = Agent.spy_count.get(number_of_players)
-        # if self.number_of_spies == 2:
-        #     self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
-        # elif self.number_of_spies == 3:
-        #     self.friends = [[[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)] for z in range(number_of_players)]
-        # else:
-        #     self.friends = [[[[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)] for z in range(number_of_players)] for t in range(number_of_players)]
-        # print(self.friends)
+        if self.number_of_spies == 2:
+            self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
+            self.SuspectTeams = [[(x,y),0] for x in range(number_of_players) for y in range(number_of_players) if x < y]
+        elif self.number_of_spies == 3:
+            self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
+            self.SuspectTeams = [[(x,y,z),0] for x in range(number_of_players) for y in range(number_of_players) for z in range(number_of_players) if x < y < z]
+        else:
+            self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
+            self.suspectsTeam = [[(x,y,z,t),0] for x in range(number_of_players) for y in range(number_of_players) for z in range(number_of_players) for t in range(number_of_players) if x < y < z < t]
+        print("friend lists are", self.friends)
+        print("Suspect teams are", self.SuspectTeams)
 
     def is_spy(self):
         '''
@@ -47,6 +51,16 @@ class pandsbot(Agent):
         '''1 more round to win/lose?'''
         return (self.spy_wins == 2) or (res_wins == 2)
 
+    # def _getBadPair(self):
+    #     #get the most suspicious pair
+    #     tmp = [x for x in self.SuspectTeams if self.player_number not in x[0]]
+    #     result = max(tmp, key=lambda p: (random.uniform(0.9, 1.0))*p[1])
+    #     #result = tmp
+    #     if result[0] > 0:#random.uniform(0, 0.5):-------------------------------------------
+    #         return result[0],result[1]
+    #     else:
+    #         return []
+
     def propose_mission(self, team_size, betrayals_required = 1):
         '''
         expects a team_size list of distinct agents with id between 0 (inclusive) and number_of_players (exclusive)
@@ -54,10 +68,9 @@ class pandsbot(Agent):
         betrayals_required are the number of betrayals required for the mission to fail.
         '''
         team = []
-        while len(team)<team_size:
-            agent = random.randrange(team_size)
-            if agent not in team:
-                team.append(agent)
+        # always include myself
+        team.append(self.player_number)
+
 
         return team        
 
@@ -90,7 +103,7 @@ class pandsbot(Agent):
         By default, spies will betray 30% of the time. 
         '''
         if self.is_spy():
-            spiesCount = len([p for p in mission if p in self.spy_list])
+            spies_count = len([p for p in mission if p in self.spy_list])
             betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
             return spies_count==betrayals_req or self.maybe_last_turn() 
 
