@@ -53,6 +53,24 @@ class PandsBot(Agent):
         '''1 more round to win/lose?'''
         return (self.spy_wins == 2) or (self.res_wins == 2)
 
+    def update_spy_worlds(self):
+    
+        for x in self.suspect_teams:
+            spy1 = x[0][0]
+            spy2 = x[0][1]
+            #calculate how suspicious x[0] pair (spy1 friend for spy2, spy2 friend for spy1, and etc)
+            estimate = self.suspects[spy1].estimate() * self.suspects[spy2].estimate();
+            if estimate < 0.99:                 
+                v = (0.50 + 0.50 * self.friends[spy1][spy2].estimate() * self.friends[spy2][spy1].estimate())
+                v *= (0.75 + 0.25 * self.supportSuspects[spy1].estimate() * self.supportSuspects[spy2].estimate())
+                v *= estimate
+                v *= 0.4 + 0.6 * (self.suspeciousActions[spy1].estimate() + self.suspeciousActions[spy2].estimate())/2
+                v *= 1 - 0.1 * (self.possibleGoodActions[spy1].estimate() + self.possibleGoodActions[spy2].estimate())/2
+                x[1] = v
+                #x[1] =(random.uniform(0.98, 1.0))*x[1]
+            else:
+                x[1] = estimate
+
     # def _getBadPair(self):
     #     #get the most suspicious pair
     #     tmp = [x for x in self.suspect_teams if self.player_number not in x[0]]
@@ -102,19 +120,19 @@ class PandsBot(Agent):
         not_in_mission = [i for i in range(self.player_number) if i not in mission]
 
         #leader didn't choose himself
-        self.suspeciousActions[self.game.leader.index].sampleBool(self.game.leader.index not in mission)
+        self.suspiciousActions[self.game.leader.index].sampleBool(self.game.leader.index not in mission)
 
         for agent in self.others:
 
             # if 1st round, 1st try and player against - suspicious ----------------------------------
-            self.suspeciousActions[agent].sampleBool( not self.votes[agent] and self.game.turn==1 and self.game.tries==1)
+            self.suspiciousActions[agent].sampleBool( not self.votes[agent] and self.game.turn==1 and self.game.tries==1)
 
             # if 5th tries and player against - suspicious ----------------------------------
-            self.suspeciousActions[agent].sampleBool( not self.votes[agent] and self.game.tries==5)
+            self.suspiciousActions[agent].sampleBool( not self.votes[agent] and self.game.tries==5)
 
                 
             #player out of team of 3 person, but vote, maybe he is spy (or stupid)
-            self.suspeciousActions[agent].sampleBool( self.votes[agent] and len(self.game.team)==3 and agent not in mission)
+            self.suspiciousActions[agent].sampleBool( self.votes[agent] and len(self.game.team)==3 and agent not in mission)
 
             #player in team, but votes againts, possible he is good (or stupid=))
             self.possibleGoodActions[agent].sampleBool( not self.votes[agent] and agent in mission)
