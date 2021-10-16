@@ -1,16 +1,19 @@
 from our_agent import OurAgent   # Our project agent
 from random_agent import RandomAgent
-from garboA import garboa
 from game import Game
 
+
+from garboA import garboa
+from greedy_agent import GreedyAgent
+
 agents = [
-    garboa(name='r0'),
-    RandomAgent(name='r1'),
-    RandomAgent(name='r2'),
-    RandomAgent(name='r3'),
-    RandomAgent(name='r4'),
-    RandomAgent(name='r5'),
-    RandomAgent(name='r6')
+    garboa(name='smart alec'),
+    GreedyAgent(name='g1'),
+    GreedyAgent(name='g2'),
+    GreedyAgent(name='g3'),
+    GreedyAgent(name='g4'),
+    GreedyAgent(name='g5'),
+    GreedyAgent(name='g6')
 ]
 
 game = Game(agents)
