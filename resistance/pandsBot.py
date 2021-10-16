@@ -1,7 +1,7 @@
 from agent import Agent
 import random
 
-class RandomAgent(Agent):        
+class PandsBot(Agent):        
     '''A sample implementation of a random agent in the game The Resistance'''
 
     def __init__(self, name='Rando'):
