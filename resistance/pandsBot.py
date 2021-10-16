@@ -21,11 +21,31 @@ class PandsBot(Agent):
         self.player_number = player_number
         self.spy_list = spy_list
 
+        self.spy_list = spy_list
+        self.players = [i for i in range(number_of_players)]
+        
+        self.current_mission = 0
+        self.spy_wins = 0
+        self.res_wins = 0
+        # set the number of spies base on table size
+        self.number_of_spies = Agent.spy_count.get(number_of_players)
+        # if self.number_of_spies == 2:
+        #     self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
+        # elif self.number_of_spies == 3:
+        #     self.friends = [[[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)] for z in range(number_of_players)]
+        # else:
+        #     self.friends = [[[[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)] for z in range(number_of_players)] for t in range(number_of_players)]
+        # print(self.friends)
+
     def is_spy(self):
         '''
         returns True iff the agent is a spy
         '''
         return self.player_number in self.spy_list
+
+    def maybe_last_turn(self):
+        '''1 more round to win/lose?'''
+        return (self.spy_wins == 2) or (self.res_wins == 2)
 
     def propose_mission(self, team_size, betrayals_required = 1):
         '''
@@ -71,10 +91,7 @@ class PandsBot(Agent):
         '''
         if self.is_spy():
             #* Reduce the betrayal rate if there are many spies in the mission
-            spies_count = 0
-            for agent in mission:
-                if agent in self.spy_list:
-                    spies_count += 1
+            spies_count = len([p for p in mission if p in self.spy_list])
             betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
 
             #* If there are more spies than the required number of betrayals
@@ -83,7 +100,7 @@ class PandsBot(Agent):
                 return random.random() < (betrayals_req/spies_count)
 
             #* If the required number of betrayals is equal to number of spies in the mission
-            return (spies_count == betrayals_req)
+            return spies_count == betrayals_req or self.maybe_last_turn() 
 
     def mission_outcome(self, mission, proposer, betrayals, mission_success):
         '''
@@ -115,5 +132,26 @@ class PandsBot(Agent):
         #nothing to do here
         pass
 
+# class for initialize and update probability
+class Probability(object):
+    def __init__(self, v0):
+        self.value = v0
+        self.n = 0
 
+    def sample(self, value):
+        self.sampleExt(value, 1)
+
+    def sampleExt(self, value, n):
+        self.value = 1 - (1 - self.value)*(1 - float(value) / float(n))
+        self.n += n
+        
+    def sampleExtNeg(self, value, n):
+        self.value *= (1- float(value) / float(n))
+
+    def estimate(self):
+        return self.value
+
+    def __repr__(self):
+        #return "%0.2f%% (%i)" % (100.0 * float(self.value), self.n)
+        return "%0.2f%% " % (100.0 * float(self.value))
 
