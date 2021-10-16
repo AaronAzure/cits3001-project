@@ -132,7 +132,8 @@ class garboa(Agent):
                 return False
 
             #* if we are not in the mission, then depending on the current mission, vote against
-            if self.player_number not in mission and (random.Random() < (0.1 * (self.current_mission+1))):
+            if self.player_number not in mission:
+            # if self.player_number not in mission and (random.Random() < (0.1 * (self.current_mission+1))):
                 return False
             return True
         #* Player is a spy
@@ -320,5 +321,16 @@ class garboa(Agent):
         spies_win - True iff the spies caused 3+ missions to fail
         spies     - a list of the player indexes for the spies.
         '''
-        # LITERALLY do nothing
+        print()
+        print()
+        if spies_win and self.is_spy():
+            print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+        elif not spies_win and self.is_spy():
+            print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
+        elif spies_win and not self.is_spy():
+            print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
+        elif not spies_win and not self.is_spy():
+            print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+        print()
+        print()
         pass

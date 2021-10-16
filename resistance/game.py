@@ -2,7 +2,6 @@ from bcolors import bcolors
 from agent import Agent
 from our_agent import OurAgent
 from random_agent import RandomAgent
-from garboA import garboa
 import random
 
 
@@ -39,11 +38,11 @@ class Game:
         # start game for each agent
         for agent_id in range(self.num_players):
             spy_list = self.spies.copy() if agent_id in self.spies else []
-            self.agents[agent_id].new_game(
-                self.num_players, agent_id, spy_list)
+            self.agents[agent_id].new_game(self.num_players, agent_id, spy_list)
         # initialise rounds
         self.missions_lost = 0
         self.rounds = []
+        
 
     def play(self):
         leader_id = 0
@@ -68,8 +67,6 @@ class Game:
         else:
             s = s + bcolors.MAGENTA + '\n\nThe Resistance failed!'
         s = s + bcolors.RED + '\nThe spies were agents: ' + \
-            str(self.spies) + '\n' + bcolors.RESET
-        s = s + bcolors.GREEN + '\nYou: ' + \
             str(self.spies) + '\n' + bcolors.RESET
         return s
 
@@ -97,8 +94,8 @@ class Round():
         produces a string representation of the round
         '''
         s = bcolors.PINK + '\nRound:' + str(self.rnd + 1)
-        for m in self.missions:
-            s = s + '\n'+str(m)
+        # for m in self.missions:
+        #     s = s + '\n'+str(m)
         if self.is_successful():
             s = s + bcolors.YELLOW + '\nResistance won the round.'
         else:
@@ -185,6 +182,7 @@ class Mission():
         '''
         Gives a string representation of the mission
         '''
+        return ""
         s = bcolors.BLUE + 'Leader:' + \
             str(self.agents[self.leader_id])+'\nTeam: '
         for i in self.team:
