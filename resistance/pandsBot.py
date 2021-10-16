@@ -23,23 +23,25 @@ class PandsBot(Agent):
 
         self.spy_list = spy_list
         self.players = [i for i in range(number_of_players)]
+        self.others = [i for i in range(number_of_players) if i != self.player_number]
         
         self.current_mission = 0
         self.spy_wins = 0
         self.res_wins = 0
         # set the number of spies base on table size
         self.number_of_spies = Agent.spy_count.get(number_of_players)
+        self.suspects = [Probability(0.0) for x in range(self.number_of_players)]
         if self.number_of_spies == 2:
             self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
-            self.SuspectTeams = [[(x,y),0] for x in range(number_of_players) for y in range(number_of_players) if x < y]
+            self.suspect_teams = [[(x,y),0] for x in range(number_of_players) for y in range(number_of_players) if x < y]
         elif self.number_of_spies == 3:
             self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
-            self.SuspectTeams = [[(x,y,z),0] for x in range(number_of_players) for y in range(number_of_players) for z in range(number_of_players) if x < y < z]
+            self.suspect_teams = [[(x,y,z),0] for x in range(number_of_players) for y in range(number_of_players) for z in range(number_of_players) if x < y < z]
         else:
             self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
-            self.suspectsTeam = [[(x,y,z,t),0] for x in range(number_of_players) for y in range(number_of_players) for z in range(number_of_players) for t in range(number_of_players) if x < y < z < t]
+            self.suspect_teams = [[(x,y,z,t),0] for x in range(number_of_players) for y in range(number_of_players) for z in range(number_of_players) for t in range(number_of_players) if x < y < z < t]
         print("friend lists are", self.friends)
-        print("Suspect teams are", self.SuspectTeams)
+        print("Suspect teams are", self.suspect_teams)
 
     def is_spy(self):
         '''
@@ -53,7 +55,7 @@ class PandsBot(Agent):
 
     # def _getBadPair(self):
     #     #get the most suspicious pair
-    #     tmp = [x for x in self.SuspectTeams if self.player_number not in x[0]]
+    #     tmp = [x for x in self.suspect_teams if self.player_number not in x[0]]
     #     result = max(tmp, key=lambda p: (random.uniform(0.9, 1.0))*p[1])
     #     #result = tmp
     #     if result[0] > 0:#random.uniform(0, 0.5):-------------------------------------------
@@ -88,10 +90,52 @@ class PandsBot(Agent):
         mission is a list of agents to be sent on a mission. 
         The agents on the mission are distinct and indexed between 0 and number_of_players.
         proposer is an int between 0 and number_of_players and is the index of the player who proposed the mission.
-        votes is a dictionary mapping player indexes to Booleans (True if they voted for the mission, False otherwise).
+        votes - list of agents (index) that voted FOR the mission
+        is a dictionary mapping player indexes to Booleans (True if they voted for the mission, False otherwise).
         No return value is required or expected.
         '''
-        #nothing to do here
+        me = self.player_number
+        # votes = votes
+        # self.votes = votes;#to work properly votes[p.index]
+        
+        # team = [p.index for p in set(self.game.team)-set(me)]
+        not_in_mission = [i for i in range(self.player_number) if i not in mission]
+
+        #leader didn't choose himself
+        self.suspeciousActions[self.game.leader.index].sampleBool(self.game.leader.index not in mission)
+
+        for agent in self.others:
+
+            # if 1st round, 1st try and player against - suspicious ----------------------------------
+            self.suspeciousActions[agent].sampleBool( not self.votes[agent] and self.game.turn==1 and self.game.tries==1)
+
+            # if 5th tries and player against - suspicious ----------------------------------
+            self.suspeciousActions[agent].sampleBool( not self.votes[agent] and self.game.tries==5)
+
+                
+            #player out of team of 3 person, but vote, maybe he is spy (or stupid)
+            self.suspeciousActions[agent].sampleBool( self.votes[agent] and len(self.game.team)==3 and agent not in mission)
+
+            #player in team, but votes againts, possible he is good (or stupid=))
+            self.possibleGoodActions[agent].sampleBool( not self.votes[agent] and agent in mission)
+
+            if agent == self.game.leader.index:
+                #spy doesnot choose second spy in team
+                for p2 in not_in_mission:
+                    self.friends[agent][p2].sampleExt(1, len(not_in_mission))
+            else:
+                #anyone vote for team where he is, so more intrested in team without
+                if agent not in mission:
+                    # for all players that voted,  team are possible friends
+                    if (self.votes[agent]):                        
+                        for p2 in mission:
+                            self.friends[agent][p2].sampleExt(1, len(mission))
+                    else:
+                        for p2 in not_in_mission:
+                            self.friends[agent][p2].sampleExt(1, len(not_in_mission))                    
+                    
+        self._updateSuspectsPair()        
+        self.team = None
         pass
 
     def betray(self, mission, proposer):
@@ -124,14 +168,29 @@ class PandsBot(Agent):
         and mission_success is True if there were not enough betrayals to cause the mission to fail, False otherwise.
         It iss not expected or required for this function to return anything.
         '''
-        #nothing to do here
+        # other = list(filter(lambda agent: agent != self.player_number, mission))
+        other = [i for i in mission if i != self.player_number]
+
+        if betrayals > 0:
+            for i in mission:    
+                self.suspects[i].sampleExt(betrayals, len(mission))
+
+        if betrayals < self.number_of_spies:
+            for i in other:    
+                self.suspects[i].sampleExt(self.number_of_spies - betrayals, len(other))
+      
+        if self.current_mission > 0:
+            for p in other:
+                val = int((self.votes[p] and betrayals > 0) or (not self.votes[p] and betrayals == 0))
+                self.supportSuspects[p].sampleExt(val,1 )
+        self._updateSuspectsPair()
         pass
 
     def round_outcome(self, rounds_complete, missions_failed):
         '''
         basic informative function, where the parameters indicate:
         rounds_complete, the number of rounds (0-5) that have been completed
-        missions_failed, the numbe of missions (0-3) that have failed.
+        missions_failed, the number of missions (0-3) that have failed.
         '''
         #nothing to do here
         pass
@@ -166,5 +225,6 @@ class Probability(object):
 
     def __repr__(self):
         #return "%0.2f%% (%i)" % (100.0 * float(self.value), self.n)
-        return "%0.2f%% " % (100.0 * float(self.value))
+        return "{:.2f}%".format(100.0 * float(self.value))
+        # return "%0.2f%% " % (100.0 * float(self.value))
 
