@@ -31,6 +31,9 @@ class PandsBot(Agent):
         # set the number of spies base on table size
         self.number_of_spies = Agent.spy_count.get(number_of_players)
         self.suspects = [Probability(0.0) for x in range(self.number_of_players)]
+
+        # friends is array describing trust a player have to another one. in e.g. friends[0][1] means how much does player0 trust player 1
+        # suspect_teams r array containing all possible spies combination, initial value at 0
         if self.number_of_spies == 2:
             self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
             self.suspect_teams = [[(x,y),0] for x in range(number_of_players) for y in range(number_of_players) if x < y]
@@ -40,6 +43,12 @@ class PandsBot(Agent):
         else:
             self.friends = [[Probability(self.number_of_spies/number_of_players) for x in range(number_of_players)] for y in range(number_of_players)]
             self.suspect_teams = [[(x,y,z,t),0] for x in range(number_of_players) for y in range(number_of_players) for z in range(number_of_players) for t in range(number_of_players) if x < y < z < t]
+        self.suspiciousActions = [Variable(0,0) for x in range(number_of_players)] #player not in team, team == 3, vote for mission
+        self.possibleGoodActions = [Variable(0,0) for x in range(number_of_players)] #player in team, votes against team
+        
+        # suspects is the array of all players, initial sus at 0
+        # the idea is to update the suspects value after each event, then update other arrays such as friends or suspect_teams
+        self.suspects = [Probability(0.0) for x in range(number_of_players)]
         print("friend lists are", self.friends)
         print("Suspect teams are", self.suspect_teams)
 
@@ -49,6 +58,28 @@ class PandsBot(Agent):
         '''
         return self.player_number in self.spy_list
 
+    def _updateSuspectsTeam(self):
+        '''
+        this function is called in vote_outcome and mission_outcome
+        update the sus value of all Teams after sus value of individual is updated
+        '''
+        for x in self.suspect_teams:
+            spy1 = x[0][0]
+            spy2 = x[0][1]
+            #calculate how suspicious x[0] pair (spy1 friend for spy2, spy2 friend for spy1, and etc)
+            estimate = 1
+            estimate *= self.suspects[x[0][i]].estimate() for i in range(self.number_of_spies)
+            if estimate < 0.99:                 
+                v = (0.50 + 0.50 * self.friends[spy1][spy2].estimate() * self.friends[spy2][spy1].estimate())
+                v *= (0.75 + 0.25 * self.supportSuspects[spy1].estimate() * self.supportSuspects[spy2].estimate())
+                v *= estimate
+                v *= 0.4 + 0.6 * (self.suspeciousActions[spy1].estimate() + self.suspeciousActions[spy2].estimate())/2
+                v *= 1 - 0.1 * (self.possibleGoodActions[spy1].estimate() + self.possibleGoodActions[spy2].estimate())/2
+                x[1] = v
+                #x[1] =(random.uniform(0.98, 1.0))*x[1]
+            else:
+                x[1] = estimate
+        
     def maybe_last_turn(self):
         '''1 more round to win/lose?'''
         return (self.spy_wins == 2) or (self.res_wins == 2)
@@ -228,3 +259,29 @@ class Probability(object):
         return "{:.2f}%".format(100.0 * float(self.value))
         # return "%0.2f%% " % (100.0 * float(self.value))
 
+class Variable(object):
+    def __init__(self, v0, n0):
+        self.total = v0
+        self.samples = n0
+
+    def sample(self, value):
+        self.sampleExt(value, 1)
+
+    def sampleBool(self, value):
+        self.sampleExt(int(value), 1)
+
+    def sampleExt(self, value, n):
+        self.total += value
+        self.samples += n
+
+    def estimate(self):
+        if self.samples > 0:
+            return float(self.total) / float(self.samples)
+        else:
+            return 0.0
+    def __repr__(self):
+        if self.samples:
+            #return "%0.2f%% (%i)" % ((100.0 * float(self.total) / float(self.samples)), self.samples)
+            return "%0.2f%% " % ((100.0 * float(self.total) / float(self.samples)))
+        else:
+            return "UNKNOWN"
