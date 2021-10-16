@@ -5,14 +5,20 @@
 """
 
 from agent import Agent
+from math import factorial
+from itertools import combinations
 import random
 
+# ! DELETE
 from bcolors import bcolors
 import time
 
 
 class BayesAgent(Agent):
     '''An agent which utilise the Bayesian Analysis in the game The Resistance'''
+    
+    times_won = 0
+    n_games = 0
 
     def __init__(self, name='Bayes'):
         '''
@@ -34,8 +40,9 @@ class BayesAgent(Agent):
         self.others = [i for i in range(number_of_players) if i != self.player_number]
         self.number_of_spies = Agent.spy_count.get(number_of_players)
         
-        print("player number is", player_number)
-        time.sleep(1)
+        # print()
+        # print(" player number is", bcolors.YELLOW + str(player_number), bcolors.RESET)
+        # time.sleep(0.25)
 
         #* Record game state
         self.current_mission = 0
@@ -146,6 +153,13 @@ class BayesAgent(Agent):
         mission_success - is True if there were not enough betrayals to cause the mission to fail, False otherwise.
         It is not expected or required for this function to return anything.
         '''
+        # n_combinations = factorial(len(mission)) / (factorial(betrayals) * factorial(len(mission) - betrayals))
+        # worlds = list(combinations(mission, betrayals))
+        # for i in self.others:
+        #     for w in worlds:
+        #         for agent in w:
+        #             prob_b = self.sus_meter[agent]
+        #     self.sus_meter[i] = self.sus_meter[i]
         pass
 
     def round_outcome(self, rounds_complete, missions_failed):
@@ -163,4 +177,22 @@ class BayesAgent(Agent):
         spies_win - True iff the spies caused 3+ missions to fail
         spies     - a list of the player indexes for the spies.
         '''
+        # print()
+        if spies_win and self.is_spy():
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+            self.times_won += 1
+        elif not spies_win and self.is_spy():
+            pass
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
+        elif spies_win and not self.is_spy():
+            pass
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
+        elif not spies_win and not self.is_spy():
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+            self.times_won += 1
+        # print()
+        self.n_games += 1
+        if (self.n_games >= 10000):
+            print(bcolors.GREEN, "{:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+        # time.sleep(1)
         pass

@@ -98,36 +98,38 @@ def print_result():
     print(YELLOW + "total = " + "{:.2f}".format(total) + END)
 
 
-sus_meter = dict()
-number_of_players = 5
-player_number = random.randint(0, number_of_players - 1)
-print(GREEN + "-- player id = " + str(player_number) + "\n" + END)
+# sus_meter = dict()
+# number_of_players = 5
+# player_number = random.randint(0, number_of_players - 1)
+# print(GREEN + "-- player id = " + str(player_number) + "\n" + END)
 
 
-for i in range(number_of_players):
-    # Do not include one as probability of being a spy
-    if i == player_number:
-        continue
-    sus_meter.setdefault(i, 2.0 / (number_of_players - 1))
-    # sus_meter[i] = (1.0 / (number_of_players - 1))
+# for i in range(number_of_players):
+#     # Do not include one as probability of being a spy
+#     if i == player_number:
+#         continue
+#     sus_meter.setdefault(i, 2.0 / (number_of_players - 1))
 
-# ? 1  :
-#  0  :  0.25 -> 0.0
-#  2  :  0.25 -> 0.0
-#! 3  :  0.25 -> 1.0
-#! 4  :  0.25 -> 1.0
-    #
+# print_result()
+# mission_outcome([1, 4], 4, 1, False)
+# print("--")
+# print_result()
+# mission_outcome([1, 3], 4, 1, False)
+# print("--")
+# print_result()
+# mission_outcome([0, 4], 4, 1, False)
+# # # mission_outcome([0,4], 2, 1, False)
+# print("--")
+# print_result()
 
-print_result()
-mission_outcome([1, 4], 4, 1, False)
-print("--")
-print_result()
-mission_outcome([1, 3], 4, 1, False)
-print("--")
-print_result()
-mission_outcome([0, 4], 4, 1, False)
-# # mission_outcome([0,4], 2, 1, False)
-print("--")
-print_result()
+# print(GREEN + "-- player id = " + str(player_number) + END)
 
-print(GREEN + "-- player id = " + str(player_number) + END)
+from itertools import combinations
+
+players = [0,1,2]
+temp = list(combinations(players, 2))
+print(temp)
+for i in temp:
+    for j in i:
+        print(j)
+# print([(x,y,z) for x in range(3) for y in range(3) for z in range(3) if x < y < z])
