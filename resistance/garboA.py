@@ -13,6 +13,9 @@ from bcolors import bcolors
 class garboa(Agent):
     '''A sample implementation of a random agent in the game The Resistance'''
 
+    times_won = 0
+    n_games = 0
+
     def __init__(self, name='Rando'):
         '''
         Initialises the agent.
@@ -28,7 +31,6 @@ class garboa(Agent):
         '''
         self.number_of_players = number_of_players
         self.player_number = player_number
-        print("player number is", player_number)
         self.spy_list = spy_list
         self.players = [i for i in range(number_of_players)]
 
@@ -65,15 +67,15 @@ class garboa(Agent):
         #* Player is a spy
         if self.is_spy():
             #* Pick up to (@param betrayals_required) to go on the mission
-            team.append(self.player_number)
 
             #* add ourselves and choose least sus spies up to @param betrayals_required
+            team.append(self.player_number)
             for i in sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[0:betrayals_required-1]:
                 if i not in team:
                     team.append(i)
-            if len(team) < betrayals_required:
-                team.append(sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[
-                            betrayals_required])
+            # if len(team) < betrayals_required:
+            #     print(sorted(list(self.spy_list), key=lambda i: self.sus_meter[i]))
+            #     team.append(sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[betrayals_required])
 
             #* fill the rest of team with least sus resistance players
             for i in sorted([i for i in self.sus_meter.keys() if i not in self.spy_list], key=lambda i: self.sus_meter[i]):
@@ -101,7 +103,6 @@ class garboa(Agent):
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
         #* Always vote yes on the first mission, regardless if resistance or spy
-        print("current mission is", self.current_mission)
         if self.current_mission == 0:
             return True
 
@@ -112,8 +113,6 @@ class garboa(Agent):
         sus_rank = sorted([i for i in self.sus_meter.keys()], key=lambda i: self.sus_meter[i], reverse=True)
         if self.player_number in sus_rank:
             sus_rank.remove(self.player_number)
-        print(bcolors.RED ,"--- ",sus_rank, bcolors.RESET)
-        print(bcolors.RED ,"--- ",self.sus_meter, bcolors.RESET)
 
         #* Player is resistance
         if not self.is_spy():
@@ -145,7 +144,6 @@ class garboa(Agent):
             for i in mission:
                 if i in self.spy_list:
                     spies_in += 1
-            print("spies in are", spies_in)
 
             #* Vote for if there are enough spies to successfully sabotage
             return (spies_in >= betrayals_req)
@@ -321,16 +319,22 @@ class garboa(Agent):
         spies_win - True iff the spies caused 3+ missions to fail
         spies     - a list of the player indexes for the spies.
         '''
-        print()
-        print()
+        # print()
         if spies_win and self.is_spy():
-            print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+            self.times_won += 1
         elif not spies_win and self.is_spy():
-            print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
+            pass
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
         elif spies_win and not self.is_spy():
-            print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
+            pass
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
         elif not spies_win and not self.is_spy():
-            print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
-        print()
-        print()
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+            self.times_won += 1
+        # print()
+        self.n_games += 1
+        if (self.n_games >= 10000):
+            print(bcolors.GREEN, "{:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+        # time.sleep(1)
         pass

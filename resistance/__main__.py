@@ -13,6 +13,7 @@ agents = [
     RandomAgent(name='r6')
 ]
 
-game = Game(agents)
-game.play()
+for i in range(10000):
+    game = Game(agents)
+    game.play()
 print(game)
