@@ -320,20 +320,27 @@ class garboa(Agent):
         spies     - a list of the player indexes for the spies.
         '''
         # print()
-        if spies_win and self.is_spy():
+        # if (spies_win):
+        #     print(bcolors.GREEN, bcolors.UNDERLINE, "  Spies won!  ", bcolors.RESET)
+        # else:
+        #     print(bcolors.GREEN, bcolors.UNDERLINE, "  Spies Lost!  ", bcolors.RESET)
+
+
+        if not spies_win and self.is_spy():
             # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
             self.times_won += 1
-        elif not spies_win and self.is_spy():
-            pass
+        elif spies_win and self.is_spy():
             # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
-        elif spies_win and not self.is_spy():
             pass
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
         elif not spies_win and not self.is_spy():
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
+            pass
+        elif spies_win and not self.is_spy():
             # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
             self.times_won += 1
         # print()
         self.n_games += 1
+        # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
         if (self.n_games >= 10000):
             print(bcolors.GREEN, "{:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
         # time.sleep(1)

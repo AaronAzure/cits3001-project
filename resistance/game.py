@@ -2,6 +2,8 @@ from bcolors import bcolors
 from agent import Agent
 from our_agent import OurAgent
 from random_agent import RandomAgent
+from garboA import garboa
+# from pandsBot import PandsBot
 import random
 
 
@@ -38,11 +40,11 @@ class Game:
         # start game for each agent
         for agent_id in range(self.num_players):
             spy_list = self.spies.copy() if agent_id in self.spies else []
-            self.agents[agent_id].new_game(self.num_players, agent_id, spy_list)
+            self.agents[agent_id].new_game(
+                self.num_players, agent_id, spy_list)
         # initialise rounds
         self.missions_lost = 0
         self.rounds = []
-        
 
     def play(self):
         leader_id = 0
@@ -59,6 +61,7 @@ class Game:
 
     # Final scores (who won)
     def __str__(self):
+        return ""   #! important
         s = 'Game between agents:' + str(self.agents)
         for r in self.rounds:
             s = s + '\n' + str(r)
@@ -93,6 +96,7 @@ class Round():
         '''
         produces a string representation of the round
         '''
+        return " " #! important
         s = bcolors.PINK + '\nRound:' + str(self.rnd + 1)
         # for m in self.missions:
         #     s = s + '\n'+str(m)
@@ -105,8 +109,10 @@ class Round():
 
     def __repr__(self):
         '''
+        # return ""
         produces a formal representation of the round
         '''
+        return ""
         s = 'Round(leader_id=' + self.leader_id \
             + ', agents=' + self.agents \
             + ', rnd=' + self.rnd \

@@ -1,6 +1,7 @@
 from our_agent import OurAgent   # Our project agent
 from random_agent import RandomAgent
 from garboA import garboa
+from garboA import garboa
 from game import Game
 
 agents = [
@@ -13,6 +14,7 @@ agents = [
     RandomAgent(name='r6')
 ]
 
+# for i in range(1):
 for i in range(10000):
     game = Game(agents)
     game.play()
