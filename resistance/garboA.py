@@ -137,16 +137,12 @@ class garboa(Agent):
             return True
         #* Player is a spy
         else:
-            spies_in = 0
+            spies_count = len([i for i in mission if i in self.spy_list])
             betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
 
             #* vote AGAINST, if there is not enough spies to betray
-            for i in mission:
-                if i in self.spy_list:
-                    spies_in += 1
-
-            #* Vote for if there are enough spies to successfully sabotage
-            return (spies_in >= betrayals_req)
+            #* Vote FOR if there are enough spies to successfully sabotage
+            return (spies_count >= betrayals_req)
 
     def vote_outcome(self, mission, proposer, votes):
         '''
@@ -342,6 +338,6 @@ class garboa(Agent):
         self.n_games += 1
         # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
         if (self.n_games >= 10000):
-            print(bcolors.GREEN, "{:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+            print(bcolors.GREEN, " garb = {:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
         # time.sleep(1)
         pass
