@@ -1,7 +1,7 @@
 from our_agent import OurAgent   # Our project agent
 from random_agent import RandomAgent
 from garboA import garboa
-from pandsBot import pandsbot
+from pandsbot import pandsbot
 from game import Game
 
 agents = [

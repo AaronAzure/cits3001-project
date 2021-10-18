@@ -3,7 +3,7 @@ from agent import Agent
 from our_agent import OurAgent
 from random_agent import RandomAgent
 from garboA import garboa
-from pandsBot import pandsbot
+from pandsbot import pandsbot
 import random
 
 
