@@ -102,7 +102,12 @@ class garboa(Agent):
         proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
+        #* Always vote for own team
+        if proposer == self.player_number:
+            return True
+
         #* Always vote yes on the first mission, regardless if resistance or spy
+        print("current mission is", self.current_mission)
         if self.current_mission == 0:
             return True
 
