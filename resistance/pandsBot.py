@@ -1,7 +1,8 @@
 from agent import Agent
 import random
 
-from bcolors import bcolors
+from bcolors import bcolors #! DELETE
+from tester import GAMES    #! DELETE
 
 
 class pandsbot(Agent):
@@ -148,7 +149,7 @@ class pandsbot(Agent):
 
     def get_good_players(self):
         # get all players that is not in the most suspicious team
-        bad, value = self.get_most_sus_team()
+        bad = self.get_most_sus_team()
         temp = set(self.others)-set(bad)
         result = sorted(temp, key=lambda p: self.get_sus_value(p))
 
@@ -171,7 +172,7 @@ class pandsbot(Agent):
             return team
 
         goodPlayers = self.get_good_players()
-        badPair, v = self.get_most_sus_team()
+        # badPair, v = self.get_most_sus_team()
 
         # add agents from good players list
         for agent in goodPlayers:
@@ -358,9 +359,8 @@ class pandsbot(Agent):
         # print()
         self.n_games += 1
         # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
-        if (self.n_games >= 1000):
-            print(bcolors.GREEN, "{:.2f}%".format(
-                self.times_won / self.n_games * 100), "Pands = ({})".format(self.n_games), bcolors.RESET)
+        if (self.n_games >= GAMES):
+            print(bcolors.GREEN, "Pands = {:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
         # time.sleep(1)
         pass
 

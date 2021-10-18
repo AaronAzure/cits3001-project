@@ -7,7 +7,8 @@
 from agent import Agent
 import random
 
-from bcolors import bcolors
+from bcolors import bcolors #! DELETE
+from tester import GAMES    #! DELETE
 
 
 class garboa(Agent):
@@ -107,7 +108,6 @@ class garboa(Agent):
             return True
 
         #* Always vote yes on the first mission, regardless if resistance or spy
-        print("current mission is", self.current_mission)
         if self.current_mission == 0:
             return True
 
@@ -342,7 +342,7 @@ class garboa(Agent):
         # print()
         self.n_games += 1
         # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
-        if (self.n_games >= 10000):
+        if (self.n_games >= GAMES):
             print(bcolors.GREEN, " garb = {:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
         # time.sleep(1)
         pass
