@@ -97,15 +97,16 @@ class garboa(Agent):
         proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
-        # how does proposer affect our vote?
-        # based on who is going on the mission, our vote is affected based on our internal state
+        #* Always vote for own team
+        if proposer == self.player_number:
+            return True
 
-        # * Always vote yes on the first mission, regardless if resistance or spy
+        #* Always vote yes on the first mission, regardless if resistance or spy
         print("current mission is", self.current_mission)
         if self.current_mission == 0:
             return True
 
-        # * Always vote yes on the fifth vote, regardless if resistance or spy
+        #* Always vote yes on the fifth vote, regardless if resistance or spy
         if self.n_rejected_votes >= 4:
             return True
 
@@ -135,14 +136,11 @@ class garboa(Agent):
             return True
         # spy
         else:
-            spies_in = 0
+            spies_in = len([i for i in mission if i in self.spy_list])
             betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
             print("betrayals require is", betrayals_req)
 
             # Vote against, if there is not enough spies to betray
-            for i in mission:
-                if i in self.spy_list:
-                    spies_in += 1
             print("spies in are", spies_in)
 
             # Vote for if there are enough spies to successfully sabotage

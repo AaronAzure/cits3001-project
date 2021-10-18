@@ -1,9 +1,12 @@
 from agent import Agent
 import random
 
+from bcolors import bcolors
+
 
 class pandsbot(Agent):
     '''A sample implementation of a random agent in the game The Resistance'''
+
 
     def __init__(self, name='Rando'):
         '''
@@ -11,6 +14,8 @@ class pandsbot(Agent):
         Nothing to do here.
         '''
         self.name = name
+        self.times_won = 0
+        self.n_games = 0
 
     def new_game(self, number_of_players, player_number, spy_list):
         '''
@@ -22,17 +27,16 @@ class pandsbot(Agent):
         self.player_number = player_number
         self.spy_list = spy_list
 
-        self.spy_list = spy_list
+        # list of all agent indexes (including oneself)
         self.players = [i for i in range(number_of_players)]
-        self.others = [i for i in range(
-            number_of_players) if i != self.player_number]
+        # list of other agent indexes (excluding oneself)
+        self.others = [i for i in range(number_of_players) if i != self.player_number]
 
-        # set the number of spies base on table size
+        #* set the number of spies base on table size
         self.number_of_spies = Agent.spy_count.get(number_of_players)
-        self.suspects = [Probability(0.0)
-                         for x in range(self.number_of_players)]
+        self.suspects = [Probability(0.0) for x in range(self.number_of_players)]
 
-        # any team of this length without us(resistance) is guaranteed at least 1 spy
+        #* any team of this length without us(resistance) is guaranteed at least 1 spy
         self.sus_length = number_of_players - self.number_of_spies
 
         self.current_mission = 0
@@ -40,39 +44,39 @@ class pandsbot(Agent):
         self.spy_wins = 0
         self.res_wins = 0
 
-        # friends is array describing trust a player have to another one. in e.g. friends[0][1] means how much does player0 trust player 1
-        # suspect_teams r array containing all possible spies combination, initial value at 0
+        #* friends - list describing trust between two players. (e.g. friends[0][1] means how much does player 0 trust player 1)
+        #* suspect_teams - list containing all possible spies combination, initial value at 0
         initial_sus = self.number_of_spies/number_of_players
         if self.number_of_spies == 2:
             self.friends = [[Probability(initial_sus)
-                             for x in range(number_of_players)] for y in range(number_of_players)]
+                             for i in range(number_of_players)] for j in range(number_of_players)]
             self.suspect_teams = [[(x, y), 0] for x in range(
                 number_of_players) for y in range(number_of_players) if x < y]
         elif self.number_of_spies == 3:
             self.friends = [[Probability(initial_sus)
-                             for x in range(number_of_players)] for y in range(number_of_players)]
+                             for i in range(number_of_players)] for j in range(number_of_players)]
             self.suspect_teams = [[(x, y, z), 0] for x in range(number_of_players) for y in range(
                 number_of_players) for z in range(number_of_players) if x < y < z]
         else:
             self.friends = [[Probability(initial_sus)
-                             for x in range(number_of_players)] for y in range(number_of_players)]
+                             for i in range(number_of_players)] for j in range(number_of_players)]
             self.suspect_teams = [[(x, y, z, t), 0] for x in range(number_of_players) for y in range(
                 number_of_players) for z in range(number_of_players) for t in range(number_of_players) if x < y < z < t]
+
         # player not in team, team == 3, vote for mission
         # suspicious action and possible good actions get updates after vote completed
-        self.suspiciousActions = [Variable(0, 0)
-                                  for x in range(number_of_players)]
-        self.possibleGoodActions = [Variable(0, 0) for x in range(
-            number_of_players)]  # player in team, votes against team
+        self.sus_actions = [Variable(0, 0) for i in range(number_of_players)]
+
+        #* player in team, votes against team with
+        self.good_actions = [Variable(0, 0) for i in range(number_of_players)]  
 
         # support suspects get updates after mission is done
-        self.supportSuspects = [Variable(initial_sus, 1.0)
-                                for x in range(number_of_players)]
+        self.voted_for_sus = [Variable(initial_sus, 1.0) for i in range(number_of_players)]
 
-        # suspects is the array of all players, initial sus at 0
+        # suspects - list of all individual players, initial sus at 0
         # the idea is to update the suspects value after each event, then update other arrays such as friends or suspect_teams
-        self.suspects = [Probability(0.0) for x in range(number_of_players)]
-        print("player number is", player_number)
+        self.suspects = [Probability(0.0) for i in range(number_of_players)]
+        # print("player number is", player_number)
 
     def is_spy(self):
         '''
@@ -80,51 +84,58 @@ class pandsbot(Agent):
         '''
         return self.player_number in self.spy_list
 
-    def _updateSuspectsTeam(self):
+    def update_suspects_team(self):
         '''
+        Update the sus value of all possible spy teams after sus value of individual is updated
         this function is called in vote_outcome and mission_outcome
-        update the sus value of all Teams after sus value of individual is updated
         '''
+        #* Calculate how plausible a possible combination of spies are
+        # calculate how suspicious x[0] pair (spy1 friend for spy2, spy2 friend for spy1, and etc)
         for x in self.suspect_teams:
-            # calculate how suspicious x[0] pair (spy1 friend for spy2, spy2 friend for spy1, and etc)
-            estimate = 1
+            sus_value = 1
+            #* calculate/retreive the sus value of each individual agent
             for i in range(self.number_of_spies):
                 if self.suspects[x[0][i]].estimate() != 0:
-                    estimate *= self.suspects[x[0][i]].estimate()
-            if estimate < 0.99:
-                temp = 1
+                    sus_value *= self.suspects[x[0][i]].estimate()
+            #* This agent is not guaranteed to be a spy
+            if sus_value < 1:
+                collusiveness = 1
+                #* Determine how collusive two agents are
                 for i in range(self.number_of_spies):
                     for j in range(self.number_of_spies):
                         if i != j:
-                            temp *= self.friends[x[0][i]][x[0][j]].estimate()
-                v = 0.50 + 0.50 * temp
+                            collusiveness *= self.friends[x[0][i]][x[0][j]].estimate()
+                new_sus_value = 0.50 + 0.50 * collusiveness
                 temp2 = 0.25
                 temp3 = 0.0
                 temp4 = 0.0
                 for i in range(self.number_of_spies):
-                    temp2 *= self.supportSuspects[x[0][i]].estimate()
-                    temp3 += self.suspiciousActions[x[0][i]].estimate()
-                    temp4 += self.possibleGoodActions[x[0][i]].estimate()
-                v *= (0.75 + temp2)
-                v *= estimate
-                v *= 0.4 + 0.6 * (temp3)/2
-                v *= 1 - 0.1 * (temp3)/2
-                x[1] = v
+                    temp2 *= self.voted_for_sus[x[0][i]].estimate()
+                    temp3 += self.sus_actions[x[0][i]].estimate()
+                    temp4 += self.good_actions[x[0][i]].estimate()
+                new_sus_value *= (0.75 + temp2)
+                new_sus_value *= sus_value
+                new_sus_value *= 0.4 + 0.6 * (temp3)/2
+                new_sus_value *= 1 - 0.1 * (temp3)/2
+                x[1] = new_sus_value
+            #* This agent is guaranteed to be a spy
             else:
-                x[1] = estimate
+                x[1] = sus_value
 
     def maybe_last_turn(self):
         '''1 more round to win/lose?'''
         return (self.spy_wins == 2) or (self.res_wins == 2)
 
-    def _getBadTeam(self):
+    def get_most_sus_team(self):
+        '''
+        Return the team with the highest sus value
+        '''
         # get the most suspicious team
-        tmp = [x for x in self.suspect_teams if self.player_number not in x[0]]
-        result = max(tmp, key=lambda p: (random.uniform(0.9, 1.0))*p[1])
-        #result = tmp
-        # random.uniform(0, 0.5):-------------------------------------------
+        tmp = [i for i in self.suspect_teams if self.player_number not in i[0]]
+        # result = max(tmp, key=lambda p: (random.uniform(0.9, 1.0))*p[1])
+        result = max(tmp, key=lambda p: p[1])
         if result[1] > 0:
-            return result[0], result[1]
+            return result[0]
         else:
             return []
 
@@ -148,40 +159,31 @@ class pandsbot(Agent):
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
 
-        othersPeople = set(self.players)-set(mission)
-
-        # always vote for own team
+        #* Always vote FOR your selected team
         if proposer == self.player_number:
             return True
+
+        #* Always vote FOR on the first mission, regardless if resistance or spy
         if self.current_mission == 0 and self.n_rejected_votes == 0:
             return True
 
-        badTeam, val = self._getBadTeam()
-
-        teamIndexes = set([agent for agent in mission])
-
-        # As a spy, vote for all missions that include enough spy to sabotage the mission!
-        if self.is_spy():
-            spiesCount = len([p for p in mission if p in self.spy_list])
-            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
-
-            if spiesCount >= betrayals_req:
-                return True
-            return False
-
-        # As resistance, always pass the fifth try.
+        #* Always vote FOR on the fifth vote, regardless if resistance or spy
         if self.n_rejected_votes == 4:
             return True
-        # If I'm not on the team and it's a team of sus length!
+        
+        #* As a spy, vote for all missions that include enough spy to sabotage the mission!
+        if self.is_spy():
+            spies_count = len([i for i in mission if i in self.spy_list])
+            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+
+            return spies_count >= betrayals_req
+
+        #* If I'm not on the team and it's a team of sus length!
         if len(mission) == self.sus_length and not self.player_number in mission:
             return False
 
-        if teamIndexes.intersection(badTeam):
-            return False
-        if proposer not in teamIndexes:
-            return False
-        # Otherwise, just approve the team and get more information.
-        return True
+        most_sus_team = self.get_most_sus_team()
+        return most_sus_team in mission
 
     def vote_outcome(self, mission, proposer, votes):
         '''
@@ -200,43 +202,38 @@ class pandsbot(Agent):
             self.number_of_players) if i not in mission]
 
         # leader didn't choose himself
-        self.suspiciousActions[proposer].sampleBool(
-            proposer not in mission)
+        self.sus_actions[proposer].sampleBool(proposer not in mission)
 
         for agent in self.others:
 
-            # if 1st round, 1st try and player against - suspicious ----------------------------------
-            self.suspiciousActions[agent].sampleBool(
-                not agent in votes and self.current_mission == 0 and self.n_rejected_votes == 0)
+            #* if 1st round, 1st try and player voted AGAINST - suspicious ----------------------------------
+            self.sus_actions[agent].sampleBool(agent not in votes and self.current_mission == 0 and self.n_rejected_votes == 0)
 
-            # if 5th tries and player against - suspicious ----------------------------------
-            self.suspiciousActions[agent].sampleBool(
-                not agent in votes and self.n_rejected_votes == 4)
+            #* if 5th tries and player AGAINST - suspicious ----------------------------------
+            self.sus_actions[agent].sampleBool(agent not in votes and self.n_rejected_votes == 4)
 
-            # player out of team of suslength, but vote, maybe he is spy (or stupid)
-            self.suspiciousActions[agent].sampleBool(
-                agent in votes and len(mission) == self.sus_length and agent not in mission)
+            #* player out of team of suslength, but vote, maybe he is spy (or stupid)
+            self.sus_actions[agent].sampleBool(agent in votes and len(mission) == self.sus_length and agent not in mission)
 
-            # player in team, but votes againts, possible he is good (or stupid)
-            self.possibleGoodActions[agent].sampleBool(
-                not agent in votes and agent in mission)
+            #* player in team, but votes againts, possible he is good (or stupid)
+            self.good_actions[agent].sampleBool(agent not in votes and agent in mission)
 
             if agent == proposer:
-                # spy doesnot choose second spy in team
+                #* spy doesnot choose second spy in team
                 for p2 in not_in_mission:
-                    self.friends[agent][p2].sampleExt(1, len(not_in_mission))
+                    self.friends[agent][p2].new_sample(1, len(not_in_mission))
             else:
-                # anyone vote for team where he is, so more intrested in team without
+                #* anyone vote for team where he is, so more intrested in team without
                 if agent not in mission:
                     # for all players that voted,  team are possible friends
                     if (agent in votes):
                         for p2 in mission:
-                            self.friends[agent][p2].sampleExt(1, len(mission))
+                            self.friends[agent][p2].new_sample(1, len(mission))
                     else:
                         for p2 in not_in_mission:
-                            self.friends[agent][p2].sampleExt(
-                                1, len(not_in_mission))
-        self._updateSuspectsTeam()
+                            self.friends[agent][p2].new_sample(1, len(not_in_mission))
+
+        self.update_suspects_team()
 
         # * Not majority vote, increment number of rejected votes
         if 2*n_approved <= self.number_of_players:
@@ -274,29 +271,23 @@ class pandsbot(Agent):
         and mission_success is True if there were not enough betrayals to cause the mission to fail, False otherwise.
         It iss not expected or required for this function to return anything.
         '''
-        if mission_success:
-            print("mission success")
-        else:
-            print("mission failed")
         self.n_rejected_votes = 0
 
-        other = [i for i in mission if i != self.player_number]
+        not_involved = [i for i in mission if i != self.player_number]
 
         if betrayals > 0:
             for i in mission:
-                self.suspects[i].sampleExt(betrayals, len(mission))
+                self.suspects[i].new_sample(betrayals, len(mission))
 
         if betrayals < self.number_of_spies:
-            for i in other:
-                self.suspects[i].sampleExt(
-                    self.number_of_spies - betrayals, len(other))
+            for i in not_involved:
+                self.suspects[i].new_sample(self.number_of_spies - betrayals, len(not_involved))
 
         if self.current_mission > 0:
-            for p in other:
-                val = int((p in self.last_votes and betrayals > 0) or (
-                    not p in self.last_votes and betrayals == 0))
-                self.supportSuspects[p].sampleExt(val, 1)
-        self._updateSuspectsTeam()
+            for p in not_involved:
+                val = int((p in self.last_votes and betrayals > 0) or (not p in self.last_votes and betrayals == 0))
+                self.voted_for_sus[p].new_sample(val, 1)
+        self.update_suspects_team()
         self.current_mission += 1
 
     def round_outcome(self, rounds_complete, missions_failed):
@@ -314,34 +305,52 @@ class pandsbot(Agent):
         spies_win, True iff the spies caused 3+ missions to fail
         spies, a list of the player indexes for the spies.
         '''
-        # nothing to do here
+        if not spies_win and self.is_spy():
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+            self.times_won += 1
+        elif spies_win and self.is_spy():
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
+            pass
+        elif not spies_win and not self.is_spy():
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
+            pass
+        elif spies_win and not self.is_spy():
+            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+            self.times_won += 1
+        # print()
+        self.n_games += 1
+        # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
+        if (self.n_games >= 1000):
+            print(bcolors.GREEN, "{:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+        # time.sleep(1)
         pass
 
-# class for initialize and update probability
 
 
 class Probability(object):
+    """ Class for initialize and update probability """
     def __init__(self, v0):
         self.value = v0
         self.n = 0
-
-    def sample(self, value):
-        self.sampleExt(value, 1)
-
-    def sampleExt(self, value, n):
-        self.value = 1 - (1 - self.value)*(1 - float(value) / float(n))
-        self.n += n
-
-    def sampleExtNeg(self, value, n):
-        self.value *= (1 - float(value) / float(n))
-
-    def estimate(self):
-        return self.value
 
     def __repr__(self):
         # return "%0.2f%% (%i)" % (100.0 * float(self.value), self.n)
         return "{:.2f}%".format(100.0 * float(self.value))
         # return "%0.2f%% " % (100.0 * float(self.value))
+        
+    # def sample(self, value):
+    #     self.new_sample(value, 1)
+
+    def new_sample(self, value, n):
+        self.value = 1 - (1 - self.value)*(1 - float(value) / float(n))
+        self.n += n
+
+    def new_sampleNeg(self, value, n):
+        self.value *= (1 - float(value) / float(n))
+
+    def estimate(self):
+        return self.value
+
 
 
 class Variable(object):
@@ -349,13 +358,20 @@ class Variable(object):
         self.total = v0
         self.samples = n0
 
-    def sample(self, value):
-        self.sampleExt(value, 1)
+    def __repr__(self):
+        if self.samples:
+            # return "%0.2f%% (%i)" % ((100.0 * float(self.total) / float(self.samples)), self.samples)
+            return "%0.2f%% " % ((100.0 * float(self.total) / float(self.samples)))
+        else:
+            return "UNKNOWN"
+
+    # def sample(self, value):
+    #     self.new_sample(value, 1)
 
     def sampleBool(self, value):
-        self.sampleExt(int(value), 1)
+        self.new_sample(int(value), 1)
 
-    def sampleExt(self, value, n):
+    def new_sample(self, value, n):
         self.total += value
         self.samples += n
 
@@ -365,9 +381,3 @@ class Variable(object):
         else:
             return 0.0
 
-    def __repr__(self):
-        if self.samples:
-            # return "%0.2f%% (%i)" % ((100.0 * float(self.total) / float(self.samples)), self.samples)
-            return "%0.2f%% " % ((100.0 * float(self.total) / float(self.samples)))
-        else:
-            return "UNKNOWN"

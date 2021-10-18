@@ -4,6 +4,11 @@ from garboA import garboa
 from pandsBot import pandsbot
 from game import Game
 
+import time
+from bcolors import bcolors
+
+#run your code
+
 agents = [
     pandsbot(name='r0'),
     RandomAgent(name='r1'),
@@ -14,6 +19,10 @@ agents = [
     RandomAgent(name='r6')
 ]
 
-game = Game(agents)
-game.play()
+time_start = time.time()
+for i in range(1000):
+    game = Game(agents)
+    game.play()
+time_elapsed = (time.time() - time_start)
+print(bcolors.YELLOW, "{:.4f} sec".format(time_elapsed), bcolors.RESET)
 print(game)

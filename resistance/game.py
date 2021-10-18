@@ -61,6 +61,7 @@ class Game:
 
     # Final scores (who won)
     def __str__(self):
+        return ""
         s = 'Game between agents:' + str(self.agents)
         for r in self.rounds:
             s = s + '\n' + str(r)
@@ -97,6 +98,7 @@ class Round():
         '''
         produces a string representation of the round
         '''
+        return ""
         s = bcolors.PINK + '\nRound:' + str(self.rnd + 1)
         for m in self.missions:
             s = s + '\n'+str(m)
@@ -111,6 +113,7 @@ class Round():
         '''
         produces a formal representation of the round
         '''
+        return ""
         s = 'Round(leader_id=' + self.leader_id \
             + ', agents=' + self.agents \
             + ', rnd=' + self.rnd \
@@ -186,6 +189,7 @@ class Mission():
         '''
         Gives a string representation of the mission
         '''
+        return ""
         s = bcolors.BLUE + 'Leader:' + \
             str(self.agents[self.leader_id])+'\nTeam: '
         for i in self.team:
