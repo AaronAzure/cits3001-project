@@ -360,7 +360,7 @@ class pandsbot(Agent):
         # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
         if (self.n_games >= 1000):
             print(bcolors.GREEN, "{:.2f}%".format(
-                self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+                self.times_won / self.n_games * 100), "Pands = ({})".format(self.n_games), bcolors.RESET)
         # time.sleep(1)
         pass
 
