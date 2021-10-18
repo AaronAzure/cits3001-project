@@ -56,9 +56,14 @@ class BayesAgent(Agent):
         self.sus_meter = {}
         # set the number of spies base on table size
         # generate sus_meter for players, default 0
-        spy_chance = float(self.number_of_spies/self.number_of_players)
-        for i in self.others:
-            self.sus_meter.setdefault(i, spy_chance)
+        worlds = list(combinations(self.others, 2))
+        world_spy_chance = float(1/self.len(worlds))
+        for i in worlds:
+            self.sus_meter.setdefault(i, world_spy_chance)
+        
+        # spy_chance = float(self.number_of_spies/self.number_of_players)
+        # for i in self.others:
+        #     self.sus_meter.setdefault(i, spy_chance)
 
     def is_spy(self):
         '''
@@ -70,7 +75,7 @@ class BayesAgent(Agent):
         '''Return True if only one more round to win/lose, False otherwise.'''
         return (self.spy_wins == 2) or (self.res_wins == 2)
 
-    # * Return list of the team that will go on the mission of size @param team_size
+    #* Return list of the team that will go on the mission of size @param team_size
     def propose_mission(self, team_size, betrayals_required=1):
         '''
         Expects a team_size list of distinct agents with id between 0 (inclusive) and number_of_players (exclusive)
@@ -111,6 +116,14 @@ class BayesAgent(Agent):
         proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
+        #* Always vote yes on the first mission, regardless if resistance or spy
+        if self.current_mission == 0:
+            return True
+
+        #* Always vote yes on the fifth vote, regardless if resistance or spy
+        if self.n_rejected_votes >= 4:
+            return True
+
         return True
 
     def vote_outcome(self, mission, proposer, votes):
@@ -153,6 +166,8 @@ class BayesAgent(Agent):
         mission_success - is True if there were not enough betrayals to cause the mission to fail, False otherwise.
         It is not expected or required for this function to return anything.
         '''
+        if betrayals > 0:
+            pass
         # n_combinations = factorial(len(mission)) / (factorial(betrayals) * factorial(len(mission) - betrayals))
         # worlds = list(combinations(mission, betrayals))
         # for i in self.others:

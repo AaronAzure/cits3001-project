@@ -101,7 +101,6 @@ class garboa(Agent):
         # based on who is going on the mission, our vote is affected based on our internal state
 
         # * Always vote yes on the first mission, regardless if resistance or spy
-        print("current mission is", self.current_mission)
         if self.current_mission == 0:
             return True
 
@@ -109,12 +108,9 @@ class garboa(Agent):
         if self.n_rejected_votes >= 4:
             return True
 
-        sus_rank = sorted([i for i in self.sus_meter.keys()],
-                          key=lambda i: self.sus_meter[i], reverse=True)
+        sus_rank = sorted([i for i in self.sus_meter.keys()], key=lambda i: self.sus_meter[i], reverse=True)
         if self.player_number in sus_rank:
             sus_rank.remove(self.player_number)
-        print(bcolors.RED ,"--- ",sus_rank, bcolors.RESET)
-        print(bcolors.RED ,"--- ",self.sus_meter, bcolors.RESET)
 
         # resistance
         if not self.is_spy():

@@ -126,10 +126,26 @@ def print_result():
 
 from itertools import combinations
 
-players = [0,1,2]
-temp = list(combinations(players, 2))
-print(temp)
-for i in temp:
-    for j in i:
-        print(j)
+# players = [0,1,2]
+# temp = list(combinations(players, 2))
+# print(temp)
+# for i in temp:
+#     for j in i:
+#         print(j)
 # print([(x,y,z) for x in range(3) for y in range(3) for z in range(3) if x < y < z])
+
+
+agents = [0,1,2,3,4,5]
+others = [0,1,3,4]
+# worlds = list(combinations(agents, 2))
+# for i in worlds:
+#     print(i)
+
+sus_meter = {}
+worlds = list(combinations(others, 2))
+world_spy_chance = float(1/len(worlds))
+for i in worlds:
+    sus_meter.setdefault(i, world_spy_chance)
+
+print(sus_meter)
+print(len(sus_meter))
