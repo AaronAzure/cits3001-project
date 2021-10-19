@@ -322,16 +322,17 @@ class pandsbot(Agent):
 
         #* Agents other than player in the mission
         others_in_mission = [i for i in mission if i != self.player_number]
+        not_in_mission = [i for i in self.others if i not in mission]
 
         #* Record how often an agent is involved in a mission that was sabotaged
         if betrayals > 0:
-            for i in mission:
-                self.suspects[i].new_sample(betrayals, len(mission))
+            for i in others_in_mission:
+                self.suspects[i].new_sample(betrayals, len(others_in_mission))
 
         #* Record how often an agent is not involved in a sabotaged mission
         if betrayals < self.number_of_spies:
-            for i in others_in_mission:
-                self.suspects[i].new_sample(self.number_of_spies - betrayals, len(others_in_mission))
+            for i in not_in_mission:
+                self.suspects[i].new_sample(self.number_of_spies - betrayals, len(not_in_mission))
 
         #* Keep track of suspicious behaviours
         #* Record agents who voted FOR missions that got sabotaged and voted AGAINST missions that were successful
