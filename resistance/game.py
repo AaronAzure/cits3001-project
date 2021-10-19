@@ -3,6 +3,7 @@ from agent import Agent
 from our_agent import OurAgent
 from random_agent import RandomAgent
 from garboA import garboa
+from pandsBot import pandsbot
 import random
 
 
@@ -60,6 +61,7 @@ class Game:
 
     # Final scores (who won)
     def __str__(self):
+        return ""   #! important
         s = 'Game between agents:' + str(self.agents)
         for r in self.rounds:
             s = s + '\n' + str(r)
@@ -68,8 +70,6 @@ class Game:
         else:
             s = s + bcolors.MAGENTA + '\n\nThe Resistance failed!'
         s = s + bcolors.RED + '\nThe spies were agents: ' + \
-            str(self.spies) + '\n' + bcolors.RESET
-        s = s + bcolors.GREEN + '\nYou: ' + \
             str(self.spies) + '\n' + bcolors.RESET
         return s
 
@@ -96,9 +96,10 @@ class Round():
         '''
         produces a string representation of the round
         '''
+        return " " #! important
         s = bcolors.PINK + '\nRound:' + str(self.rnd + 1)
-        for m in self.missions:
-            s = s + '\n'+str(m)
+        # for m in self.missions:
+        #     s = s + '\n'+str(m)
         if self.is_successful():
             s = s + bcolors.YELLOW + '\nResistance won the round.'
         else:
@@ -108,8 +109,10 @@ class Round():
 
     def __repr__(self):
         '''
+        # return ""
         produces a formal representation of the round
         '''
+        return ""
         s = 'Round(leader_id=' + self.leader_id \
             + ', agents=' + self.agents \
             + ', rnd=' + self.rnd \
@@ -186,6 +189,7 @@ class Mission():
         '''
         Gives a string representation of the mission
         '''
+        return ""
         s = bcolors.BLUE + 'Leader:' + \
             str(self.agents[self.leader_id])+'\nTeam: '
         for i in self.team:
