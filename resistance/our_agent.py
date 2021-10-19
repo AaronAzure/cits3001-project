@@ -22,21 +22,6 @@ class OurAgent(Agent):
     n_rejected_votes = 0
     n_failed_missions = 0
 
-    # ? 5 C 2 = 10
-    # (1 / number_of_players) %
-
-    # ? 2 spies out of 4
-    # 0 1 2 3 , 0 = 25% -> 30%   (spies)
-    # 0 1 2 3 , 1 = 25% -> 30%   (spies)
-    # 0 1 2 3 , 2 = 25% -> 25%
-    # 0 1 2 3 , 3 = 25% -> 15%
-
-    # 0 1 2 3 4 | 0 = 40% -> 60%  #! (spies)
-    # 0 1 2 3 4 | 1 = 10% -> 15%
-    # 0 1 2 3 4 | 2 = 05% -> 00%
-    # 0 1 2 3 4 | 3 = 20% -> 10%
-    # 0 1 2 3 4 | 4 = 25% -> 35%   #! (spies)
-
     def __init__(self, name='Rando'):
         '''
         Initialises the agent.
@@ -85,9 +70,6 @@ class OurAgent(Agent):
         '''
         return self.player_number in self.spy_list
 
-    # todo |                                      |
-    # todo |  Below is where we need to add code  |
-    # todo V                                      V
 
     # * Return list of the team that will go on the mission of size @param team_size
     def propose_mission(self, team_size, betrayals_required=1):
@@ -128,8 +110,6 @@ class OurAgent(Agent):
         proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
-        # how does proposer affect our vote?
-        # based on who is going on the mission, our vote is affected based on our internal state
 
         # * Always vote yes on the first mission, regardless if resistance or spy
         if self.current_mission == 0:

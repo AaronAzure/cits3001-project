@@ -121,5 +121,3 @@ class Agent:
         spies, a list of the player indexes for the spies.
         '''
         pass
-
-
