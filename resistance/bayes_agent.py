@@ -11,6 +11,7 @@ import random
 
 # ! DELETE
 from bcolors import bcolors
+from tester import GAMES    #! DELETE
 import time
 
 
@@ -39,10 +40,6 @@ class BayesAgent(Agent):
         self.players = [i for i in range(number_of_players)]
         self.others = [i for i in range(number_of_players) if i != self.player_number]
         self.number_of_spies = Agent.spy_count.get(number_of_players)
-        
-        # print()
-        # print(" player number is", bcolors.YELLOW + str(player_number), bcolors.RESET)
-        # time.sleep(0.25)
 
         #* Record game state
         self.current_mission = 0
@@ -51,15 +48,19 @@ class BayesAgent(Agent):
         self.n_rejected_votes = 0
         self.n_failed_missions = 0
 
+        #* any team of this length without us(resistance) is guaranteed at least 1 spy
+        self.number_of_non_spies = number_of_players - self.number_of_spies
+
         # * if not spy internal state / memory (probability of index agent of being a spy)
         # int(index) -> float(probability of being a spy)
         self.sus_meter = {}
         # set the number of spies base on table size
         # generate sus_meter for players, default 0
-        worlds = list(combinations(self.others, 2))
-        world_spy_chance = float(1/self.len(worlds))
-        for i in worlds:
-            self.sus_meter.setdefault(i, world_spy_chance)
+        # worlds = list(combinations(self.others, 2))
+        # world_spy_chance = float(1/self.len(worlds))
+        initial_sus = (self.number_of_spies)/(self.number_of_players)
+        for i in self.others:
+            self.sus_meter.setdefault(i, initial_sus)
         
         # spy_chance = float(self.number_of_spies/self.number_of_players)
         # for i in self.others:
@@ -75,6 +76,26 @@ class BayesAgent(Agent):
         '''Return True if only one more round to win/lose, False otherwise.'''
         return (self.spy_wins == 2) or (self.res_wins == 2)
 
+
+    def bayes_anaylsis(self, group, sus_action_weight, sus_factor):
+        prob_action = []
+        prob_of_betray = sus_action_weight
+        for i in self.others:
+            spy_chance = sus_factor
+            if i in group:
+                prob = prob_of_betray
+                prob *= spy_chance
+            else:
+                prob = 1 - prob_of_betray
+                prob *= (1 - spy_chance)
+            
+            prob_action.append(self.sus_meter.get(i) * prob)
+
+        # print(prob_action)
+        for i in range(len(self.others)):
+            self.sus_meter[self.others[i]] = (prob_action[i] / sum(prob_action)) * self.number_of_spies
+
+
     #* Return list of the team that will go on the mission of size @param team_size
     def propose_mission(self, team_size, betrayals_required=1):
         '''
@@ -87,26 +108,30 @@ class BayesAgent(Agent):
         team.append(self.player_number)
 
         #* Player is a spy
-        # if self.is_spy():
-        #     # Pick up to (@param betrayals_required) to go on the mission
-        #     for i in sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[0:betrayals_required-1]:
-        #         if i not in team:
-        #             team.append(i)
-        #     if len(team) < betrayals_required:
-        #         team.append(sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[
-        #                     betrayals_required])
-        #     # fill the rest of team with least sus resistance players
-        #     for i in sorted([i for i in self.sus_meter.keys() if i not in self.spy_list], key=lambda i: self.sus_meter[i]):
-        #         team.append(i)
-        #         if len(team) == team_size:
-        #             break
+        if self.is_spy():
+            least_sus = sorted(self.sus_meter, key=self.sus_meter.get)
+
+            # Pick up to (@param betrayals_required) to go on the mission
+            for i in least_sus:
+                if i in self.spy_list and i not in team:
+                    team.append(i)
+                if len(team) >= team_size:
+                    break
+
+            # fill the rest of team with least sus resistance players
+            for i in least_sus:
+                if i not in team:
+                    team.append(i)
+                if len(team) >= team_size:
+                    break
         #* Player is resistance
-        # else:
-        #     count = 0
-        #     sus_rank = sorted([i for i in self.sus_meter.keys() if i != self.player_number], key=lambda i: self.sus_meter[i])
-        #     while len(team) < team_size:
-        #         team.append(sus_rank[count])
-        #         count += 1
+        else:
+            least_sus = sorted(self.sus_meter, key=self.sus_meter.get)
+
+            while len(team) < team_size:
+                agent = least_sus.pop(0)
+                team.append(agent)
+
         return team
 
     def vote(self, mission, proposer):
@@ -116,6 +141,10 @@ class BayesAgent(Agent):
         proposer - is an int of the index of the player who proposed the mission. (between 0 and number_of_players)
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
+        #* Always vote FOR your selected team
+        if proposer == self.player_number:
+            return True
+
         #* Always vote yes on the first mission, regardless if resistance or spy
         if self.current_mission == 0:
             return True
@@ -124,7 +153,28 @@ class BayesAgent(Agent):
         if self.n_rejected_votes >= 4:
             return True
 
-        return True
+        #* As a spy, vote for all missions that include enough spy to sabotage the mission!
+        if self.is_spy():
+            spies_count = len([i for i in mission if i in self.spy_list])
+            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+
+            return spies_count >= betrayals_req
+
+        #* If I'm not on the team and the team is equal to the number of actual resistance members
+        if len(mission) == self.number_of_non_spies and self.player_number not in mission:
+            return False
+
+        most_sus = 0
+        most_sus_agent = 0
+        least_sus = 1
+        for agent, sus_score in self.sus_meter.items():
+            if sus_score > most_sus:
+                most_sus = sus_score
+                most_sus_agent = agent
+            if sus_score < least_sus:
+                least_sus = sus_score
+                
+        return most_sus_agent not in mission
 
     def vote_outcome(self, mission, proposer, votes):
         '''
@@ -134,6 +184,32 @@ class BayesAgent(Agent):
         votes    - is a dictionary mapping player indexes to Booleans (True if they voted for the mission, False otherwise).
         No return value is required or expected.
         '''
+        #* Did the team get rejected?
+        n_approved = len(votes)
+        #* Not majority vote, increment number of rejected votes
+        if 2*n_approved <= self.number_of_players:
+            self.n_rejected_votes += 1
+
+        not_in_mission = [i for i in self.others if i not in mission]
+        voted_against = [i for i in self.others if i not in votes]
+
+        #* Increase sus value if leader did not choose themself
+        if proposer not in mission:
+            self.bayes_anaylsis([proposer], 0.55, 0.55)
+
+        #* Increase sus value for those that voted AGAINST the first mission
+        if self.current_mission == 0 and self.n_rejected_votes == 0 and len(voted_against) > 0:
+            self.bayes_anaylsis(voted_against, 0.55, 0.55)
+
+        #* Increase sus value for those that voted AGAINST on the fifth vote
+        if self.n_rejected_votes == 4 and len(voted_against) > 0:
+            self.bayes_anaylsis(voted_against, 0.8, 0.8)
+
+        #* Increase sus value for those out of team of suslength, but voted FOR
+        less_sus_agents = [i for i in votes if len(mission) == self.number_of_non_spies and i not in mission and i != self.player_number]
+        if len(less_sus_agents) > 0: 
+            self.bayes_anaylsis(less_sus_agents, 0.2, 0.2)
+        
         pass
 
     def betray(self, mission, proposer):
@@ -155,7 +231,7 @@ class BayesAgent(Agent):
                 return random.random() < (betrayals_req/spies_count)
 
             #* If the required number of betrayals is equal to number of spies in the mission
-            return spies_count == betrayals_req or self.maybe_last_turn() 
+            return (spies_count == betrayals_req) or self.maybe_last_turn() 
 
     def mission_outcome(self, mission, proposer, betrayals, mission_success):
         '''
@@ -166,15 +242,36 @@ class BayesAgent(Agent):
         mission_success - is True if there were not enough betrayals to cause the mission to fail, False otherwise.
         It is not expected or required for this function to return anything.
         '''
-        if betrayals > 0:
-            pass
-        # n_combinations = factorial(len(mission)) / (factorial(betrayals) * factorial(len(mission) - betrayals))
-        # worlds = list(combinations(mission, betrayals))
-        # for i in self.others:
-        #     for w in worlds:
-        #         for agent in w:
-        #             prob_b = self.sus_meter[agent]
-        #     self.sus_meter[i] = self.sus_meter[i]
+        #* Record the mission status
+        if mission_success:
+            self.res_wins += 1
+        else:
+            self.spy_wins += 1
+
+        self.n_rejected_votes = 0   # Reset number of reject votes for next mission
+
+        # self.bayes_anaylsis(mission, 0.8, max((betrayals/len(mission)), 0.1))
+        prob_action = []
+        prob_of_betray = 0.8
+        for i in self.others:
+            spy_chance = max((betrayals/len(mission)), 0.1)
+            if i in mission:
+                prob_action_given_is_spy = prob_of_betray
+                prob_action_given_is_spy *= spy_chance
+                # print("--", "{:.2f}".format(prob_of_betray), i, spy_chance)
+            else:
+                prob_action_given_is_spy = (1 - prob_of_betray)
+                prob_action_given_is_spy *= (1 - spy_chance)
+            #     print("--", "{:.2f}".format(1 - prob_of_betray), i, (1 - spy_chance))
+            # print(self.sus_meter.get(i), i, prob_action_given_is_spy)
+            prob_action.append(self.sus_meter.get(i) * prob_action_given_is_spy)
+
+        # print([ '%.2f' % elem for elem in prob_action ])
+        # print(sum(prob_action))
+        for i in range(len(self.others)):
+            self.sus_meter[self.others[i]] = (prob_action[i] / sum(prob_action)) * self.number_of_spies
+        
+        self.current_mission += 1
         pass
 
     def round_outcome(self, rounds_complete, missions_failed):
@@ -192,22 +289,18 @@ class BayesAgent(Agent):
         spies_win - True iff the spies caused 3+ missions to fail
         spies     - a list of the player indexes for the spies.
         '''
-        # print()
-        if spies_win and self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+        if not spies_win and self.is_spy():
             self.times_won += 1
-        elif not spies_win and self.is_spy():
+        elif spies_win and self.is_spy():
             pass
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
-        elif spies_win and not self.is_spy():
-            pass
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
         elif not spies_win and not self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
+            pass
+        elif spies_win and not self.is_spy():
             self.times_won += 1
-        # print()
+        
         self.n_games += 1
-        if (self.n_games >= 10000):
-            print(bcolors.GREEN, "{:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
-        # time.sleep(1)
+        
+        if (self.n_games >= GAMES):
+            print(bcolors.GREEN, "Bayes_ind = {:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+        
         pass

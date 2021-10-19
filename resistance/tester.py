@@ -1,6 +1,6 @@
 # class for initialize and update probability
 
-GAMES = 1000
+GAMES = 10000
 
 # class Probability(object):
 #     def __init__(self, v0):

@@ -2,6 +2,7 @@ from our_agent import OurAgent   # Our project agent
 from random_agent import RandomAgent
 from garboA import garboa
 from pandsBot import pandsbot
+from bayes_agent import BayesAgent
 from game import Game
 
 import time
@@ -12,7 +13,7 @@ from tester import GAMES
 #run your code
 
 agents = [
-    pandsbot(name='r1'),
+    BayesAgent(name='r1'),
     RandomAgent(name='r0'),
     RandomAgent(name='r2'),
     RandomAgent(name='r3'),
