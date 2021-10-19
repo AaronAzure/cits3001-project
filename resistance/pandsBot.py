@@ -320,7 +320,7 @@ class pandsbot(Agent):
         self.n_rejected_votes = 0   # Reset number of reject votes for next mission
 
         # Agents who were not in the mission
-        not_in_mission = [i for i in mission if i != self.player_number]
+        not_in_mission = [i for i in self.others if i not in mission]
 
         #* Record how often an agent is involved in a mission that was sabotaged
         if betrayals > 0:
