@@ -171,22 +171,24 @@ class pandsbot(Agent):
                     team.append(pick)
             return team
 
-        goodPlayers = self.get_good_players()
+        less_sus_agents = self.get_good_players()
+        #* player is resistance
         if not self.is_spy():
             # add agents from good players list
-            for agent in goodPlayers:
+            for agent in less_sus_agents:
                 if len(team) < team_size:
                     team.append(agent)
+        #* player is spy
         else:
-            # add spies from goodPlayers list till @betrayal_require
-            for agent in goodPlayers:
+            #* add fellow spies from less_sus_agents list till @param betrayal_required
+            for agent in less_sus_agents:
                 if agent in self.spy_list and betrayals_required < len(team):
                     team.append(agent)
             while betrayals_required < len(team):
                 pick = random.choice(self.spy_list)
                 if pick not in team:
                     team.append(pick)
-            for agent in goodPlayers:
+            for agent in less_sus_agents:
                 if agent not in team and len(team) < team_size:
                     team.append(agent)
         return team
@@ -240,8 +242,7 @@ class pandsbot(Agent):
         if 2*n_approved <= self.number_of_players:
             self.n_rejected_votes += 1
 
-        not_in_mission = [i for i in range(
-            self.number_of_players) if i not in mission and i != self.player_number]
+        not_in_mission = [i for i in self.players if i not in mission]
 
         #* Increase sus value if leader did not choose themself
         self.sus_actions[proposer].sampleBool(proposer not in mission)
@@ -249,30 +250,24 @@ class pandsbot(Agent):
         for agent in self.others:
 
             #* Increase sus value for those that voted AGAINST the first mission
-            self.sus_actions[agent].sampleBool(
-                agent not in votes and self.current_mission == 0 and self.n_rejected_votes == 0)
+            self.sus_actions[agent].sampleBool(agent not in votes and self.current_mission == 0 and self.n_rejected_votes == 0)
 
             #* Increase sus value for those that voted AGAINST on the fifth vote
-            self.sus_actions[agent].sampleBool(
-                agent not in votes and self.n_rejected_votes == 4)
+            self.sus_actions[agent].sampleBool(agent not in votes and self.n_rejected_votes == 4)
 
             #* Increase sus value for those out of team of suslength, but voted FOR
-            self.sus_actions[agent].sampleBool(agent in votes and len(
-                mission) == self.sus_length and agent not in mission)
+            self.sus_actions[agent].sampleBool(agent in votes and len(mission) == self.sus_length and agent not in mission)
 
             #* Increase sus value for those in team, but votes AGAINST
-            self.good_actions[agent].sampleBool(
-                agent not in votes and agent in mission)
+            self.good_actions[agent].sampleBool(agent not in votes and agent in mission)
 
             if agent == proposer:
                 #* Spy does not choose second spy in team
                 for p2 in not_in_mission:
-                    self.associates[agent][p2].new_sample(
-                        1, len(not_in_mission))
+                    self.associates[agent][p2].new_sample(1, len(not_in_mission))
             else:
-                #* anyone vote for team where he is, so more interested in team without
+                #* for all agents not in mission that voted FOR, could possibly be in cahoots with someone on the mission
                 if agent not in mission:
-                    #* for all players that voted FOR, pair is possibly in cahoots
                     if (agent in votes):
                         for p2 in mission:
                             self.associates[agent][p2].new_sample(
@@ -381,7 +376,6 @@ class pandsbot(Agent):
         if (self.n_games >= 1000):
             print(bcolors.GREEN, "{:.2f}%".format(
                 self.times_won / self.n_games * 100), "Pands = ({})".format(self.n_games), bcolors.RESET)
-        # time.sleep(1)
         pass
 
 
