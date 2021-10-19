@@ -12,19 +12,19 @@ from tester import GAMES
 #run your code
 
 agents = [
-    garboa(name='r1'),
-    pandsbot(name='r0'),
-    pandsbot(name='r2'),
-    pandsbot(name='r3'),
-    pandsbot(name='r4'),
-    pandsbot(name='r5'),
-    pandsbot(name='r6')
+    pandsbot(name='r1'),
+    RandomAgent(name='r0'),
+    RandomAgent(name='r2'),
+    RandomAgent(name='r3'),
+    RandomAgent(name='r4'),
+    RandomAgent(name='r5'),
+    RandomAgent(name='r6')
 ]
 
 time_start = time.time()
 for i in range(GAMES):
-    # if i % 10 == 0:
-    #     print("Game",i)
+    if i % 10 == 0:
+        print("Game",i)
     game = Game(agents)
     game.play()
 time_elapsed = (time.time() - time_start)
