@@ -23,8 +23,8 @@ agents = [
 
 time_start = time.time()
 for i in range(GAMES):
-    if i % 10 == 0:
-        print("Game",i)
+    # if i % 10 == 0:
+    #     print("Game",i)
     game = Game(agents)
     game.play()
 time_elapsed = (time.time() - time_start)

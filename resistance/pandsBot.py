@@ -27,17 +27,16 @@ class pandsbot(Agent):
         self.player_number = player_number
         self.spy_list = spy_list
 
-        # list of all agent indexes (including oneself)
+        #* list of all agent indexes (including oneself)
         self.players = [i for i in range(number_of_players)]
-        # list of other agent indexes (excluding oneself)
-        self.others = [i for i in range(
-            number_of_players) if i != self.player_number]
+        #* list of other agent indexes (excluding oneself)
+        self.others = [i for i in range(number_of_players) if i != self.player_number]
 
-        # * set the number of spies base on table size
+        #* set the number of spies base on table size
         self.number_of_spies = Agent.spy_count.get(number_of_players)
 
-        # * any team of this length without us(resistance) is guaranteed at least 1 spy
-        self.sus_length = number_of_players - self.number_of_spies
+        #* any team of this length without us(resistance) is guaranteed at least 1 spy
+        self.non_spies = number_of_players - self.number_of_spies
 
         self.current_mission = 0
         self.n_rejected_votes = 0
@@ -49,35 +48,31 @@ class pandsbot(Agent):
         initial_sus = self.number_of_spies/number_of_players
         if self.number_of_spies == 2:
             self.associates = [[Probability(initial_sus)
-                             for i in range(number_of_players)] for j in range(number_of_players)]
+                                for i in range(number_of_players)] for j in range(number_of_players)]
             self.suspect_teams = [[(x, y), 0] for x in range(
                 number_of_players) for y in range(number_of_players) if x < y]
         elif self.number_of_spies == 3:
             self.associates = [[Probability(initial_sus)
-                             for i in range(number_of_players)] for j in range(number_of_players)]
+                                for i in range(number_of_players)] for j in range(number_of_players)]
             self.suspect_teams = [[(x, y, z), 0] for x in range(number_of_players) for y in range(
                 number_of_players) for z in range(number_of_players) if x < y < z]
         else:
             self.associates = [[Probability(initial_sus)
-                             for i in range(number_of_players)] for j in range(number_of_players)]
+                                for i in range(number_of_players)] for j in range(number_of_players)]
             self.suspect_teams = [[(x, y, z, t), 0] for x in range(number_of_players) for y in range(
                 number_of_players) for z in range(number_of_players) for t in range(number_of_players) if x < y < z < t]
 
-        # player not in team, team == 3, vote for mission
-        # suspicious action and possible good actions get updates after vote completed
+        #* List of suspicious actions over the number of actions
         self.sus_actions = [Variable(0, 0) for i in range(number_of_players)]
 
-        # * player in team, votes against team with
+        #* List of good actions over the number of actions
         self.good_actions = [Variable(0, 0) for i in range(number_of_players)]
 
-        # support suspects get updates after mission is done
-        self.voted_for_sus = [Variable(initial_sus, 1.0)
-                              for i in range(number_of_players)]
+        #* List of agents counting the number of times they voted FOR who we believe to be a spy
+        self.voted_for_sus = [Variable(initial_sus, 1.0) for i in range(number_of_players)]
 
-        # suspects - list of all individual players, initial sus at 0
-        # the idea is to update the suspects value after each event, then update other arrays such as associates or suspect_teams
+        #* List of individual sus value
         self.suspects = [Probability(0.0) for i in range(number_of_players)]
-        # print("player number is", player_number)
 
     def is_spy(self):
         '''
@@ -90,18 +85,18 @@ class pandsbot(Agent):
         Update the sus value of all possible spy teams after sus value of individual is updated
         this function is called in vote_outcome and mission_outcome
         '''
-        # * Calculate how plausible a possible combination of spies are
+        #* Calculate how plausible a possible combination of spies are
         # calculate how suspicious x[0] pair (spy1 friend for spy2, spy2 friend for spy1, and etc)
         for x in self.suspect_teams:
             sus_value = 1
-            # * calculate/retreive the sus value of each individual agent
+            #* calculate/retreive the sus value of each individual agent
             for i in range(self.number_of_spies):
                 if self.suspects[x[0][i]].estimate() != 0:
                     sus_value *= self.suspects[x[0][i]].estimate()
-            # * This agent is not guaranteed to be a spy
+            #* This agent is not guaranteed to be a spy
             if sus_value < 1:
                 collusiveness = 1
-                # * Determine how collusive two agents are
+                #* Determine how collusive two agents are
                 for i in range(self.number_of_spies):
                     for j in range(self.number_of_spies):
                         if i != j:
@@ -119,40 +114,48 @@ class pandsbot(Agent):
                 new_sus_value *= 0.4 + 0.6 * (temp3)/2
                 new_sus_value *= 1 - 0.1 * (temp3)/2
                 x[1] = new_sus_value
-            # * This agent is guaranteed to be a spy
+            #* This agent is guaranteed to be a spy
             else:
                 x[1] = sus_value
 
     def maybe_last_turn(self):
-        '''1 more round to win/lose?'''
+        '''
+        Return true if there is one more round to win/lose, regardless if spy or resistance.
+        false otherwise.
+        '''
         return (self.spy_wins == 2) or (self.res_wins == 2)
 
     def get_most_sus_team(self):
         '''
         Return the team with the highest sus value
         '''
-        tmp = [i for i in self.suspect_teams if self.player_number not in i[0]]
-        result = max(tmp, key=lambda p: p[1])
         #* Most sus team
+        temp = [i for i in self.suspect_teams if self.player_number not in i[0]]
+        result = max(temp, key=lambda p: p[1])
         if result[1] > 0:
             return result[0]
-        #* Team all equally sus
+        #* Everyone equally sus
         else:
             return []
 
     def get_sus_value(self, agent):
+        '''
+        Return sus value of agent
+        '''
         value = (0.75 + 0.25 * self.voted_for_sus[agent].estimate())
         value *= self.suspects[agent].estimate()
         value *= 0.4 + 0.6 * (self.sus_actions[agent].estimate())
         value *= 1 - 0.1 * (self.good_actions[agent].estimate())
         return value
 
-    def get_good_players(self):
-        # get all players that is not in the most suspicious team
+    def get_less_sus_agents(self):
+        '''
+        Return the team with the lowest sus value
+        '''
         bad = self.get_most_sus_team()
         temp = set(self.others)-set(bad)
         result = sorted(temp, key=lambda p: self.get_sus_value(p))
-
+        
         return result
 
     def propose_mission(self, team_size, betrayals_required=1):
@@ -162,7 +165,7 @@ class pandsbot(Agent):
         betrayals_required are the number of betrayals required for the mission to fail.
         '''
         team = []
-        # always include myself
+        #* always include myself
         team.append(self.player_number)
         if self.current_mission == 0:
             while len(team) < team_size:
@@ -171,14 +174,26 @@ class pandsbot(Agent):
                     team.append(pick)
             return team
 
-        goodPlayers = self.get_good_players()
-        # badPair, v = self.get_most_sus_team()
-
-        # add agents from good players list
-        for agent in goodPlayers:
-            if len(team) < team_size:
-                team.append(agent)
-
+        less_sus_agents = self.get_less_sus_agents()
+        #* player is resistance
+        if not self.is_spy():
+            #* add agents who are less sus
+            for agent in less_sus_agents:
+                if len(team) < team_size:
+                    team.append(agent)
+        #* player is spy
+        else:
+            #* add fellow spies from less_sus_agents list till @param betrayal_required
+            for agent in less_sus_agents:
+                if agent in self.spy_list and betrayals_required < len(team):
+                    team.append(agent)
+            while betrayals_required < len(team):
+                pick = random.choice(self.spy_list)
+                if pick not in team:
+                    team.append(pick)
+            for agent in less_sus_agents:
+                if agent not in team and len(team) < team_size:
+                    team.append(agent)
         return team
 
     def vote(self, mission, proposer):
@@ -189,27 +204,27 @@ class pandsbot(Agent):
         The function should return True if the vote is for the mission, and False if the vote is against the mission.
         '''
 
-        # * Always vote FOR your selected team
+        #* Always vote FOR your selected team
         if proposer == self.player_number:
             return True
 
-        # * Always vote FOR on the first mission, regardless if resistance or spy
+        #* Always vote FOR on the first mission, regardless if resistance or spy
         if self.current_mission == 0 and self.n_rejected_votes == 0:
             return True
 
-        # * Always vote FOR on the fifth vote, regardless if resistance or spy
+        #* Always vote FOR on the fifth vote, regardless if resistance or spy
         if self.n_rejected_votes == 4:
             return True
 
-        # * As a spy, vote for all missions that include enough spy to sabotage the mission!
+        #* As a spy, vote for all missions that include enough spy to sabotage the mission!
         if self.is_spy():
             spies_count = len([i for i in mission if i in self.spy_list])
             betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
 
             return spies_count >= betrayals_req
 
-        # * If I'm not on the team and it's a team of sus length!
-        if len(mission) == self.sus_length and not self.player_number in mission:
+        #* If I'm not on the team and the team is equal to the number of actual resistance members
+        if len(mission) == self.non_spies and self.player_number not in mission:
             return False
 
         most_sus_team = self.get_most_sus_team()
@@ -230,13 +245,13 @@ class pandsbot(Agent):
         if 2*n_approved <= self.number_of_players:
             self.n_rejected_votes += 1
 
-        not_in_mission = [i for i in range(self.number_of_players) if i not in mission and i != self.player_number ]
+        not_in_mission = [i for i in self.players if i not in mission]
 
         #* Increase sus value if leader did not choose themself
         self.sus_actions[proposer].sampleBool(proposer not in mission)
 
+        #* Based on heuristics, increase each player sus value
         for agent in self.others:
-
             #* Increase sus value for those that voted AGAINST the first mission
             self.sus_actions[agent].sampleBool(agent not in votes and self.current_mission == 0 and self.n_rejected_votes == 0)
 
@@ -244,7 +259,7 @@ class pandsbot(Agent):
             self.sus_actions[agent].sampleBool(agent not in votes and self.n_rejected_votes == 4)
 
             #* Increase sus value for those out of team of suslength, but voted FOR
-            self.sus_actions[agent].sampleBool(agent in votes and len(mission) == self.sus_length and agent not in mission)
+            self.sus_actions[agent].sampleBool(agent in votes and len(mission) == self.non_spies and agent not in mission)
 
             #* Increase sus value for those in team, but votes AGAINST
             self.good_actions[agent].sampleBool(agent not in votes and agent in mission)
@@ -254,9 +269,8 @@ class pandsbot(Agent):
                 for p2 in not_in_mission:
                     self.associates[agent][p2].new_sample(1, len(not_in_mission))
             else:
-                #* anyone vote for team where he is, so more interested in team without
+                #* for all agents not in mission that voted FOR, could possibly be in cahoots with someone on the mission
                 if agent not in mission:
-                    #* for all players that voted FOR, pair is possibly in cahoots
                     if (agent in votes):
                         for p2 in mission:
                             self.associates[agent][p2].new_sample(1, len(mission))
@@ -299,15 +313,15 @@ class pandsbot(Agent):
         It iss not expected or required for this function to return anything.
         '''
         #* Record the mission status
-        if betrayals >= Agent.fails_required[self.number_of_players][self.current_mission]:
-            self.spy_wins += 1
-        else:
+        if mission_success:
             self.res_wins += 1
+        else:
+            self.spy_wins += 1
 
         self.n_rejected_votes = 0   # Reset number of reject votes for next mission
 
-        # Agents who were not in the mission
-        not_in_mission = [i for i in self.others if i not in mission]
+        #* Agents other than player in the mission
+        others_in_mission = [i for i in mission if i != self.player_number]
 
         #* Record how often an agent is involved in a mission that was sabotaged
         if betrayals > 0:
@@ -316,13 +330,13 @@ class pandsbot(Agent):
 
         #* Record how often an agent is not involved in a sabotaged mission
         if betrayals < self.number_of_spies:
-            for i in not_in_mission:
-                self.suspects[i].new_sample(self.number_of_spies - betrayals, len(not_in_mission))
+            for i in others_in_mission:
+                self.suspects[i].new_sample(self.number_of_spies - betrayals, len(others_in_mission))
 
         #* Keep track of suspicious behaviours
         #* Record agents who voted FOR missions that got sabotaged and voted AGAINST missions that were successful
         if self.current_mission > 0:
-            for p in not_in_mission:
+            for p in others_in_mission:
                 val = int((p in self.last_votes and betrayals > 0) or (p not in self.last_votes and betrayals == 0))
                 self.voted_for_sus[p].new_sample(val, 1)
 
@@ -345,18 +359,14 @@ class pandsbot(Agent):
         spies, a list of the player indexes for the spies.
         '''
         if not spies_win and self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
             self.times_won += 1
         elif spies_win and self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
             pass
         elif not spies_win and not self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
             pass
         elif spies_win and not self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
             self.times_won += 1
-        # print()
+        
         self.n_games += 1
         # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
         if (self.n_games >= GAMES):
@@ -372,16 +382,8 @@ class Probability(object):
         self.value = v0
         self.n = 0
 
-    def __repr__(self):
-        # return "%0.2f%% (%i)" % (100.0 * float(self.value), self.n)
-        return "{:.2f}%".format(100.0 * float(self.value))
-        # return "%0.2f%% " % (100.0 * float(self.value))
-
-    # def sample(self, value):
-    #     self.new_sample(value, 1)
-
-    def new_sample(self, value, n=1):
-        self.value = 1 - (1 - self.value)*(1 - float(value) / float(n))
+    def new_sample(self, value, n):
+        self.value = 1 - (1 - self.value) * (1 - float(value) / float(n))
         self.n += n
 
     def new_sampleNeg(self, value, n):
@@ -395,13 +397,6 @@ class Variable(object):
     def __init__(self, v0, n0):
         self.total = v0
         self.samples = n0
-
-    def __repr__(self):
-        if self.samples:
-            # return "%0.2f%% (%i)" % ((100.0 * float(self.total) / float(self.samples)), self.samples)
-            return "%0.2f%% " % ((100.0 * float(self.total) / float(self.samples)))
-        else:
-            return "UNKNOWN"
 
     def sampleBool(self, value):
         self.new_sample(int(value), 1)
