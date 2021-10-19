@@ -342,8 +342,7 @@ class pandsbot(Agent):
         # * Record agents who voted FOR missions that got sabotaged and voted AGAINST missions that were successful
         if self.current_mission > 0:
             for p in not_in_mission:
-                val = int((p in self.last_votes and betrayals > 0) or (
-                    p not in self.last_votes and betrayals == 0))
+                val = int((p in self.last_votes and betrayals > 0) or (p not in self.last_votes and betrayals == 0))
                 self.voted_for_sus[p].new_sample(val, 1)
 
         self.update_suspects_team()
@@ -401,7 +400,7 @@ class Probability(object):
     # def sample(self, value):
     #     self.new_sample(value, 1)
 
-    def new_sample(self, value, n=1):
+    def new_sample(self, value, n):
         self.value = 1 - (1 - self.value)*(1 - float(value) / float(n))
         self.n += n
 
