@@ -19,6 +19,8 @@ class BayesAgent(Agent):
     '''An agent which utilise the Bayesian Analysis in the game The Resistance'''
     
     times_won = 0
+    game_as_spy = 0
+    game_as_res = 0
     n_games = 0
 
     def __init__(self, name='Bayes'):
@@ -58,7 +60,7 @@ class BayesAgent(Agent):
         # generate sus_meter for players, default 0
         # worlds = list(combinations(self.others, 2))
         # world_spy_chance = float(1/self.len(worlds))
-        initial_sus = (self.number_of_spies)/(self.number_of_players)
+        initial_sus = (self.number_of_spies)/(len(self.others))
         for i in self.others:
             self.sus_meter.setdefault(i, initial_sus)
         
@@ -76,8 +78,27 @@ class BayesAgent(Agent):
         '''Return True if only one more round to win/lose, False otherwise.'''
         return (self.spy_wins == 2) or (self.res_wins == 2)
 
+    def balance_sus_values(self):
+        '''
+        Ensure that no accusation of any opponent being a spy is greater than 100% 
+        '''
+        for i in self.others:
+            if self.sus_meter[i] > 1:
+                extra = (self.sus_meter.get(i) - 1)/(len(self.others) - 1)
+                self.sus_meter[i] = 1.0
+                for j in self.others:
+                    if j != i:
+                        self.sus_meter[j] += extra
 
     def bayes_anaylsis(self, group, sus_action_weight, sus_factor):
+
+        # K = 2
+        # res = dict()
+        # for key in self.sus_meter:
+        #     # rounding to K using round()
+        #     res[key] = round(self.sus_meter[key], K)
+        # print("b4  " + str(res), sum(self.sus_meter.values())) 
+
         prob_action = []
         prob_of_betray = sus_action_weight
         for i in self.others:
@@ -94,6 +115,15 @@ class BayesAgent(Agent):
         # print(prob_action)
         for i in range(len(self.others)):
             self.sus_meter[self.others[i]] = (prob_action[i] / sum(prob_action)) * self.number_of_spies
+            
+        self.balance_sus_values()
+
+        # K = 2
+        # res = dict()
+        # for key in self.sus_meter:
+        #     # rounding to K using round()
+        #     res[key] = round(self.sus_meter[key], K)
+        # print("    " + str(res), sum(self.sus_meter.values())) 
 
 
     #* Return list of the team that will go on the mission of size @param team_size
@@ -195,15 +225,15 @@ class BayesAgent(Agent):
 
         #* Increase sus value if leader did not choose themself
         if proposer not in mission:
-            self.bayes_anaylsis([proposer], 0.55, 0.55)
+            self.bayes_anaylsis([proposer], 0.55, 0.5)
 
         #* Increase sus value for those that voted AGAINST the first mission
         if self.current_mission == 0 and self.n_rejected_votes == 0 and len(voted_against) > 0:
-            self.bayes_anaylsis(voted_against, 0.55, 0.55)
+            self.bayes_anaylsis(voted_against, 0.55, 0.5)
 
         #* Increase sus value for those that voted AGAINST on the fifth vote
         if self.n_rejected_votes == 4 and len(voted_against) > 0:
-            self.bayes_anaylsis(voted_against, 0.8, 0.8)
+            self.bayes_anaylsis(voted_against, 0.8, 0.5)
 
         #* Increase sus value for those out of team of suslength, but voted FOR
         less_sus_agents = [i for i in votes if len(mission) == self.number_of_non_spies and i not in mission and i != self.player_number]
@@ -271,6 +301,7 @@ class BayesAgent(Agent):
         for i in range(len(self.others)):
             self.sus_meter[self.others[i]] = (prob_action[i] / sum(prob_action)) * self.number_of_spies
         
+        self.balance_sus_values()
         self.current_mission += 1
         pass
 
@@ -291,16 +322,19 @@ class BayesAgent(Agent):
         '''
         if not spies_win and self.is_spy():
             self.times_won += 1
+            self.game_as_spy += 1
         elif spies_win and self.is_spy():
             pass
         elif not spies_win and not self.is_spy():
             pass
         elif spies_win and not self.is_spy():
             self.times_won += 1
+            self.game_as_res += 1
         
         self.n_games += 1
         
         if (self.n_games >= GAMES):
-            print(bcolors.GREEN, "Bayes_ind = {:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+            print(bcolors.GREEN, "Bayes_ind = {:.2f}%".format(self.times_won / self.n_games * 100),
+                 "({}), s={}, r={}".format(self.n_games, self.game_as_spy, self.game_as_res), bcolors.RESET)
         
         pass

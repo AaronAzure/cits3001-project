@@ -8,14 +8,17 @@ from tester import GAMES    #! DELETE
 class pandsbot(Agent):
     '''A sample implementation of a random agent in the game The Resistance'''
 
+    times_won = 0
+    n_games = 0
+    game_as_spy = 0
+    game_as_res = 0
+
     def __init__(self, name='Rando'):
         '''
         Initialises the agent.
         Nothing to do here.
         '''
         self.name = name
-        self.times_won = 0
-        self.n_games = 0
 
     def new_game(self, number_of_players, player_number, spy_list):
         '''
@@ -361,17 +364,20 @@ class pandsbot(Agent):
         '''
         if not spies_win and self.is_spy():
             self.times_won += 1
+            self.game_as_spy += 1
         elif spies_win and self.is_spy():
             pass
         elif not spies_win and not self.is_spy():
             pass
         elif spies_win and not self.is_spy():
             self.times_won += 1
+            self.game_as_res += 1
         
         self.n_games += 1
         # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
         if (self.n_games >= GAMES):
-            print(bcolors.GREEN, "Pands = {:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+            print(bcolors.GREEN, "  pands = {:.2f}%".format(self.times_won / self.n_games * 100),
+                 "({}), s={}, r={}".format(self.n_games, self.game_as_spy, self.game_as_res), bcolors.RESET)
         # time.sleep(1)
         pass
 

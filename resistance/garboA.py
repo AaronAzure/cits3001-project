@@ -16,6 +16,8 @@ class garboa(Agent):
 
     times_won = 0
     n_games = 0
+    game_as_spy = 0
+    game_as_res = 0
 
     def __init__(self, name='Rando'):
         '''
@@ -321,29 +323,21 @@ class garboa(Agent):
         spies_win - True iff the spies caused 3+ missions to fail
         spies     - a list of the player indexes for the spies.
         '''
-        # print()
-        # if (spies_win):
-        #     print(bcolors.GREEN, bcolors.UNDERLINE, "  Spies won!  ", bcolors.RESET)
-        # else:
-        #     print(bcolors.GREEN, bcolors.UNDERLINE, "  Spies Lost!  ", bcolors.RESET)
-
-
         if not spies_win and self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
             self.times_won += 1
+            self.game_as_spy += 1
         elif spies_win and self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
             pass
         elif not spies_win and not self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
             pass
         elif spies_win and not self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
             self.times_won += 1
-        # print()
+            self.game_as_res += 1
+        
         self.n_games += 1
         # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
         if (self.n_games >= GAMES):
-            print(bcolors.GREEN, " garb = {:.2f}%".format(self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+            print(bcolors.GREEN, "    garb = {:.2f}%".format(self.times_won / self.n_games * 100),
+                 "({}), s={}, r={}".format(self.n_games, self.game_as_spy, self.game_as_res), bcolors.RESET)
         # time.sleep(1)
         pass
