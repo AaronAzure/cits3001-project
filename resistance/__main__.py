@@ -17,14 +17,14 @@ from tester import GAMES
 #run your code
 
 agents = [
-    pandsbot(name='spy0'),    #? spies
-    pandsbot(name='spy1'),    #? spies
-    pandsbot(name='spy2'),    #? spies
-    garboa(name='r3'),
-    garboa(name='r4'),
-    garboa(name='r5'),
+    garboa(name='spy0'),    #? spies
+    garboa(name='spy1'),    #? spies
+    garboa(name='spy2'),    #? spies
+    pandsbot(name='r3'),
+    pandsbot(name='r4'),
+    pandsbot(name='r5'),
     # garboa(name='r6'),
-    garboa(name='r7')
+    pandsbot(name='r7')
 
     # BayesAgent(name='spy0'),    #? spies
     # BayesAgent(name='spy1'),    #? spies
