@@ -434,7 +434,7 @@ class pandsbot():
 
 
 class Probability(object):
-    """ Class for initialize and update probability """
+    """ Class for initializing and updating probability """
 
     def __init__(self, v0):
         self.value = v0
