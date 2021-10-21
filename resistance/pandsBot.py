@@ -1,4 +1,5 @@
 import random
+from itertools import combinations
 
 # from agent import Agent     #! DELETE
 from bcolors import bcolors #! DELETE
@@ -73,22 +74,13 @@ class pandsbot():
         #* associates - list describing trust between two players. (e.g. associates[0][1] means how much does player 0 trust player 1)
         #* suspect_teams - list containing all possible spies combination, initial value at 0
         initial_sus = self.number_of_spies/number_of_players
-        if self.number_of_spies == 2:
-            self.associates = [[Probability(initial_sus)
-                                for i in range(number_of_players)] for j in range(number_of_players)]
-            self.suspect_teams = [[(x, y), 0] for x in range(
-                number_of_players) for y in range(number_of_players) if x < y]
-        elif self.number_of_spies == 3:
-            self.associates = [[Probability(initial_sus)
-                                for i in range(number_of_players)] for j in range(number_of_players)]
-            self.suspect_teams = [[(x, y, z), 0] for x in range(number_of_players) for y in range(
-                number_of_players) for z in range(number_of_players) if x < y < z]
-        else:
-            self.associates = [[Probability(initial_sus)
-                                for i in range(number_of_players)] for j in range(number_of_players)]
-            self.suspect_teams = [[(x, y, z, t), 0] for x in range(number_of_players) for y in range(
-                number_of_players) for z in range(number_of_players) for t in range(number_of_players) if x < y < z < t]
-
+        self.associates = [[Probability(initial_sus) for i in range(number_of_players)] for j in range(number_of_players)]
+        
+        worlds = combinations(self.players, self.number_of_spies)
+        self.suspect_teams = []
+        for i in worlds:
+            self.suspect_teams.append([i, 0])
+            
         #* List of suspicious actions over the number of actions
         self.sus_actions = [Variable(0, 0) for i in range(number_of_players)]
 
