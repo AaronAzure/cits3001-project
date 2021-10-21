@@ -23,7 +23,7 @@ agents = [
     garboa(name='r3'),
     garboa(name='r4'),
     garboa(name='r5'),
-    garboa(name='r6'),
+    # garboa(name='r6'),
     garboa(name='r7')
 
     # BayesAgent(name='spy0'),    #? spies
