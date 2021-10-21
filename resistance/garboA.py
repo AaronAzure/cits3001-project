@@ -4,18 +4,43 @@
 @about: CITS3001 project 2021 - resistanceAI
 """
 
-from agent import Agent
 import random
 
 from bcolors import bcolors  # ! DELETE
 from tester import GAMES  # ! DELETE
 
 
-class garboa(Agent):
+class garboa():
     '''A sample implementation of a random agent in the game The Resistance'''
 
     times_won = 0
     n_games = 0
+    game_as_spy = 0
+    game_as_res = 0
+
+    #game parameters for agents to access
+    #python is such that these variables could be mutated, so tournament play
+    #will be conducted via web sockets.
+    #e.g. self.mission_size[8][3] is the number to be sent on the 3rd mission in a game of 8
+    mission_sizes = {
+            5:[2,3,2,3,3], \
+            6:[2,3,4,3,4], \
+            7:[2,3,3,4,4], \
+            8:[3,4,4,5,5], \
+            9:[3,4,4,5,5], \
+            10:[3,4,4,5,5]
+    }
+    #number of spies for different game sizes
+    spy_count = {5:2, 6:2, 7:3, 8:3, 9:3, 10:4} 
+    #e.g. self.betrayals_required[8][3] is the number of betrayals required for the 3rd mission in a game of 8 to fail
+    fails_required = {
+            5:[1,1,1,1,1], \
+            6:[1,1,1,1,1], \
+            7:[1,1,1,2,1], \
+            8:[1,1,1,2,1], \
+            9:[1,1,1,2,1], \
+            10:[1,1,1,2,1]
+    }
 
     def __init__(self, name='Rando'):
         '''
@@ -41,7 +66,7 @@ class garboa(Agent):
         self.n_failed_missions = 0
 
         # set the number of spies base on table size
-        self.number_of_spies = Agent.spy_count.get(number_of_players)
+        self.number_of_spies = self.spy_count.get(number_of_players)
 
         # * if not spy internal state / memory (probability of index agent of being a spy)
         # int(index) -> float(probability of being a spy)
@@ -142,7 +167,7 @@ class garboa(Agent):
         # * Player is a spy
         else:
             spies_count = len([i for i in mission if i in self.spy_list])
-            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+            betrayals_req = self.fails_required[self.number_of_players][self.current_mission]
 
             # * vote AGAINST, if there is not enough spies to betray
             # * Vote FOR if there are enough spies to successfully sabotage
@@ -212,7 +237,7 @@ class garboa(Agent):
             for agent in mission:
                 if agent in self.spy_list:
                     spies_count += 1
-            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+            betrayals_req = self.fails_required[self.number_of_players][self.current_mission]
 
             # * If there are more spies than the required number of betrayals
             if spies_count > betrayals_req:
@@ -324,29 +349,21 @@ class garboa(Agent):
         spies_win - True iff the spies caused 3+ missions to fail
         spies     - a list of the player indexes for the spies.
         '''
-        # print()
-        # if (spies_win):
-        #     print(bcolors.GREEN, bcolors.UNDERLINE, "  Spies won!  ", bcolors.RESET)
-        # else:
-        #     print(bcolors.GREEN, bcolors.UNDERLINE, "  Spies Lost!  ", bcolors.RESET)
-
         if not spies_win and self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
             self.times_won += 1
+            self.game_as_spy += 1
         elif spies_win and self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
             pass
         elif not spies_win and not self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You LOST!", bcolors.RESET)
             pass
         elif spies_win and not self.is_spy():
-            # print(bcolors.GREEN, bcolors.UNDERLINE, "You WON!", bcolors.RESET)
             self.times_won += 1
-        # print()
+            self.game_as_res += 1
+        
         self.n_games += 1
         # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
         if (self.n_games >= GAMES):
-            print(bcolors.GREEN, " garb = {:.2f}%".format(
-                self.times_won / self.n_games * 100), "({})".format(self.n_games), bcolors.RESET)
+            print(bcolors.GREEN, "    garb = {:.2f}%".format(self.times_won / self.n_games * 100),
+                 "({}), s={}, r={}".format(self.n_games, self.game_as_spy, self.game_as_res), bcolors.RESET)
         # time.sleep(1)
         pass

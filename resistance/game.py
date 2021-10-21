@@ -3,7 +3,7 @@ from agent import Agent
 from our_agent import OurAgent
 from random_agent import RandomAgent
 from garboA import garboa
-from pandsBot import pandsbot
+# from pandsBot import PandsBot
 import random
 
 
@@ -27,16 +27,20 @@ class Game:
         '''
         if len(agents) < 5 or len(agents) > 10:
             raise Exception('Agent array out of range')
-        # clone and shuffle agent array
+        self.num_players = len(agents)
+
+        # allocate spies
         self.agents = agents.copy()
         random.shuffle(self.agents)
-        self.num_players = len(agents)
-        # allocate spies
         self.spies = []
-        while len(self.spies) < Agent.spy_count[self.num_players]:
-            spy = random.randrange(self.num_players)
-            if spy not in self.spies:
-                self.spies.append(spy)
+
+        for id in range(self.num_players):
+            if len(self.spies) < Agent.spy_count[self.num_players] and "spy" in self.agents[id].name:
+                self.spies.append(id)
+        # while len(self.spies) < Agent.spy_count[self.num_players]:
+        #     spy = len(self.spies)
+        #     if spy not in self.spies:
+        #         self.spies.append(spy)
         # start game for each agent
         for agent_id in range(self.num_players):
             spy_list = self.spies.copy() if agent_id in self.spies else []
@@ -45,6 +49,27 @@ class Game:
         # initialise rounds
         self.missions_lost = 0
         self.rounds = []
+        # todo ------------------------------------------------------------------------------------
+        # if len(agents) < 5 or len(agents) > 10:
+        #     raise Exception('Agent array out of range')
+        # # clone and shuffle agent array
+        # self.agents = agents.copy()
+        # random.shuffle(self.agents)
+        # self.num_players = len(agents)
+        # # allocate spies
+        # self.spies = []
+        # while len(self.spies) < Agent.spy_count[self.num_players]:
+        #     spy = random.randrange(self.num_players)
+        #     if spy not in self.spies:
+        #         self.spies.append(spy)
+        # # start game for each agent
+        # for agent_id in range(self.num_players):
+        #     spy_list = self.spies.copy() if agent_id in self.spies else []
+        #     self.agents[agent_id].new_game(
+        #         self.num_players, agent_id, spy_list)
+        # # initialise rounds
+        # self.missions_lost = 0
+        # self.rounds = []
 
     def play(self):
         leader_id = 0
@@ -63,8 +88,8 @@ class Game:
     def __str__(self):
         return ""   #! important
         s = 'Game between agents:' + str(self.agents)
-        for r in self.rounds:
-            s = s + '\n' + str(r)
+        # for r in self.rounds:
+        #     s = s + '\n' + str(r)
         if self.missions_lost < 3:
             s = s + bcolors.MAGENTA + '\n\nThe Resistance succeeded!'
         else:
@@ -109,7 +134,7 @@ class Round():
 
     def __repr__(self):
         '''
-        # return ""
+        return ""
         produces a formal representation of the round
         '''
         return ""
