@@ -76,7 +76,7 @@ class pandsbot():
         initial_sus = self.number_of_spies/number_of_players
         self.associates = [[Probability(initial_sus) for i in range(number_of_players)] for j in range(number_of_players)]
         
-        worlds = combinations(self.players, self.number_of_spies)
+        worlds = combinations(self.others, self.number_of_spies)
         self.suspect_teams = []
         for i in worlds:
             self.suspect_teams.append([i, 0])
@@ -85,20 +85,20 @@ class pandsbot():
         self.sus_actions = dict()
         actions_vals = 0
         n_actions = 0
-        for i in range(number_of_players):
+        for i in self.others:
             self.sus_actions.setdefault(i, [actions_vals, n_actions])
 
         #* List of good actions over the number of actions
         self.good_actions = dict()
         actions_vals = 0
         n_actions = 0
-        for i in range(number_of_players):
+        for i in self.others:
             self.good_actions.setdefault(i, [actions_vals, n_actions])
         # self.good_actions = [Variable(0, 0) for i in range(number_of_players)]
 
         #* List of agents counting the number of times they voted FOR who we believe to be a spy
         self.voted_for_sus = dict()
-        for i in range(number_of_players):
+        for i in self.others:
             self.voted_for_sus.setdefault(i, [initial_sus, 1.0])
         # self.voted_for_sus = [Variable(initial_sus, 1.0) for i in range(number_of_players)]
 
@@ -137,7 +137,7 @@ class pandsbot():
                 voted_for_sus_val = 0.25
                 sus_actions_val = 0.0
                 good_actions_val = 0.0
-                for i in range(self.number_of_spies):
+                for i in self.others:
                     if self.voted_for_sus.get(i)[1] > 0:
                         voted_for_sus_val += (self.voted_for_sus[i][0]/self.voted_for_sus[i][1])
 
@@ -299,26 +299,27 @@ class pandsbot():
         not_in_mission = [i for i in self.players if i not in mission]
 
         #* Increase sus value if leader did not choose themself
-        action_val = (proposer not in mission)
-        self.sus_actions[proposer] = [self.sus_actions.get(proposer)[0] + (action_val), self.sus_actions.get(proposer)[1] + 1]
+        if proposer != self.player_number:
+            action_val = (proposer not in mission)
+            self.sus_actions[proposer] = [self.sus_actions.get(proposer)[0] + (action_val), self.sus_actions.get(proposer)[1] + 1]
 
         #* Based on heuristics, increase each player sus value
         for agent in self.others:
             #* Increase sus value for those that voted AGAINST the first mission
             action_val = (agent not in votes and self.current_mission == 0 and self.n_rejected_votes == 0)
-            self.sus_actions[agent] = [self.sus_actions[proposer][0] + (action_val), self.sus_actions[proposer][1] + 1]
+            self.sus_actions[agent] = [self.sus_actions[agent][0] + (action_val), self.sus_actions[agent][1] + 1]
 
             #* Increase sus value for those that voted AGAINST on the fifth vote
             action_val = (agent not in votes and self.n_rejected_votes == 4)
-            self.sus_actions[agent] = [self.sus_actions[proposer][0] + (action_val), self.sus_actions[proposer][1] + 1]
+            self.sus_actions[agent] = [self.sus_actions[agent][0] + (action_val), self.sus_actions[agent][1] + 1]
 
             #* Increase sus value for those out of team of suslength, but voted FOR
             action_val = (agent in votes and len(mission) == self.non_spies and agent not in mission)
-            self.sus_actions[agent] = [self.sus_actions[proposer][0] + (action_val), self.sus_actions[proposer][1] + 1]
+            self.sus_actions[agent] = [self.sus_actions[agent][0] + (action_val), self.sus_actions[agent][1] + 1]
 
             #* Increase sus value for those in team, but votes AGAINST
             action_val = (agent not in votes and agent in mission)
-            self.good_actions[agent] = [self.good_actions[proposer][0] + (action_val), self.good_actions[proposer][1] + 1]
+            self.good_actions[agent] = [self.good_actions[agent][0] + (action_val), self.good_actions[agent][1] + 1]
 
             if agent == proposer:
                 #* Spy does not choose second spy in team
@@ -378,7 +379,7 @@ class pandsbot():
 
         #* Agents other than player in the mission
         others_in_mission = [i for i in mission if i != self.player_number]
-        not_in_mission = [i for i in self.others if i not in mission]
+        not_in_mission = [i for i in self.others if i not in mission and i != self.player_number]
 
         #* Record how often an agent is involved in a mission that was sabotaged
         if betrayals > 0:
@@ -393,9 +394,9 @@ class pandsbot():
         #* Keep track of suspicious behaviours
         #* Record agents who voted FOR missions that got sabotaged and voted AGAINST missions that were successful
         if self.current_mission > 0:
-            for p in others_in_mission:
-                val = int((p in self.last_votes and betrayals > 0) or (p not in self.last_votes and betrayals == 0))
-                self.voted_for_sus[p] = [self.voted_for_sus[proposer][0] + (val), self.voted_for_sus[proposer][1] + 1]
+            for i in others_in_mission:
+                val = int((i in self.last_votes and betrayals > 0) or (i not in self.last_votes and betrayals == 0))
+                self.voted_for_sus[i] = [self.voted_for_sus[i][0] + (val), self.voted_for_sus[i][1] + 1]
 
         self.update_suspects_team()
         self.current_mission += 1
