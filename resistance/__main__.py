@@ -1,4 +1,5 @@
 from os import getloadavg
+from typing import Mapping
 from our_agent import OurAgent   # Our project agent
 from random_agent import RandomAgent
 
@@ -6,6 +7,7 @@ from garboA import garboa
 from pandsBot import pandsbot
 from bayes_agent import BayesAgent
 from game import Game
+from ModelBasedAgent import MAgent
 
 import time
 from bcolors import bcolors
@@ -15,13 +17,14 @@ from tester import GAMES
 #run your code
 
 agents = [
-    BayesAgent(name='spy0'),    #? spies
-    BayesAgent(name='spy1'),    #? spies
-    BayesAgent(name='spy2'),    #? spies
-    pandsbot(name='r3'),
-    pandsbot(name='r4'),
-    pandsbot(name='r5'),
-    pandsbot(name='r6')
+    pandsbot(name='spy0'),    #? spies
+    pandsbot(name='spy1'),    #? spies
+    pandsbot(name='spy2'),    #? spies
+    garboa(name='r3'),
+    garboa(name='r4'),
+    garboa(name='r5'),
+    garboa(name='r6'),
+    garboa(name='r7')
 
     # BayesAgent(name='spy0'),    #? spies
     # BayesAgent(name='spy1'),    #? spies

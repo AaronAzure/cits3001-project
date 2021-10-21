@@ -1,17 +1,41 @@
-from agent import Agent
 import random
 
+# from agent import Agent     #! DELETE
 from bcolors import bcolors #! DELETE
 from tester import GAMES    #! DELETE
 
 
-class pandsbot(Agent):
+class pandsbot():
     '''A sample implementation of a random agent in the game The Resistance'''
 
     times_won = 0
     n_games = 0
     game_as_spy = 0
     game_as_res = 0
+
+    #game parameters for agents to access
+    #python is such that these variables could be mutated, so tournament play
+    #will be conducted via web sockets.
+    #e.g. self.mission_size[8][3] is the number to be sent on the 3rd mission in a game of 8
+    mission_sizes = {
+            5:[2,3,2,3,3], \
+            6:[2,3,4,3,4], \
+            7:[2,3,3,4,4], \
+            8:[3,4,4,5,5], \
+            9:[3,4,4,5,5], \
+            10:[3,4,4,5,5]
+    }
+    #number of spies for different game sizes
+    spy_count = {5:2, 6:2, 7:3, 8:3, 9:3, 10:4} 
+    #e.g. self.betrayals_required[8][3] is the number of betrayals required for the 3rd mission in a game of 8 to fail
+    fails_required = {
+            5:[1,1,1,1,1], \
+            6:[1,1,1,1,1], \
+            7:[1,1,1,2,1], \
+            8:[1,1,1,2,1], \
+            9:[1,1,1,2,1], \
+            10:[1,1,1,2,1]
+    }
 
     def __init__(self, name='Rando'):
         '''
@@ -36,7 +60,7 @@ class pandsbot(Agent):
         self.others = [i for i in range(number_of_players) if i != self.player_number]
 
         #* set the number of spies base on table size
-        self.number_of_spies = Agent.spy_count.get(number_of_players)
+        self.number_of_spies = self.spy_count.get(number_of_players)
 
         #* any team of this length without us(resistance) is guaranteed at least 1 spy
         self.non_spies = number_of_players - self.number_of_spies
@@ -222,7 +246,7 @@ class pandsbot(Agent):
         #* As a spy, vote for all missions that include enough spy to sabotage the mission!
         if self.is_spy():
             spies_count = len([i for i in mission if i in self.spy_list])
-            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+            betrayals_req = self.fails_required[self.number_of_players][self.current_mission]
 
             return spies_count >= betrayals_req
 
@@ -296,7 +320,7 @@ class pandsbot(Agent):
         if self.is_spy():
             #* Reduce the betrayal rate if there are many spies in the mission
             spies_count = len([p for p in mission if p in self.spy_list])
-            betrayals_req = Agent.fails_required[self.number_of_players][self.current_mission]
+            betrayals_req = self.fails_required[self.number_of_players][self.current_mission]
 
             #* If there are more spies than the required number of betrayals
             if spies_count > betrayals_req:
