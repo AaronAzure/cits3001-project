@@ -94,13 +94,11 @@ class pandsbot():
         n_actions = 0
         for i in self.others:
             self.good_actions.setdefault(i, [actions_vals, n_actions])
-        # self.good_actions = [Variable(0, 0) for i in range(number_of_players)]
 
         #* List of agents counting the number of times they voted FOR who we believe to be a spy
         self.voted_for_sus = dict()
         for i in self.others:
             self.voted_for_sus.setdefault(i, [initial_sus, 1.0])
-        # self.voted_for_sus = [Variable(initial_sus, 1.0) for i in range(number_of_players)]
 
         #* List of individual sus value
         self.suspects = dict()
@@ -118,7 +116,6 @@ class pandsbot():
         this function is called in vote_outcome and mission_outcome
         '''
         #* Calculate how plausible a possible combination of spies are
-        # calculate how suspicious x[0] pair (spy1 friend for spy2, spy2 friend for spy1, and etc)
         for x in self.suspect_teams:
             sus_value = 1
             #* calculate/retreive the sus value of each individual agent
