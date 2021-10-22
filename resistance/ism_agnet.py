@@ -1,5 +1,5 @@
 """
-@name: OurAgent
+@name: ism_agent
 @author: Aaron Wee (22702446) and Alex Mai (22638901)
 @about: CITS3001 project 2021 - resistanceAI
 """
@@ -10,7 +10,7 @@ from bcolors import bcolors  # ! DELETE
 from tester import GAMES  # ! DELETE
 
 
-class garboa():
+class ISMAgent():
     '''A sample implementation of a random agent in the game The Resistance'''
 
     times_won = 0

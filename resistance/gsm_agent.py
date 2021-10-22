@@ -1,12 +1,16 @@
+"""
+@name: gsm_agent
+@author: Aaron Wee (22702446) and Alex Mai (22638901)
+@about: CITS3001 project 2021 - resistanceAI
+"""
 import random
 from itertools import combinations
 
-# from agent import Agent     #! DELETE
 from bcolors import bcolors #! DELETE
 from tester import GAMES    #! DELETE
 
 
-class pandsbot():
+class GSMAgent():
     '''A sample implementation of a random agent in the game The Resistance'''
 
     times_won = 0
@@ -14,10 +18,9 @@ class pandsbot():
     game_as_spy = 0
     game_as_res = 0
 
-    #game parameters for agents to access
-    #python is such that these variables could be mutated, so tournament play
-    #will be conducted via web sockets.
-    #e.g. self.mission_size[8][3] is the number to be sent on the 3rd mission in a game of 8
+    # game parameters for agents to access
+    # python is such that these variables could be mutated, so tournament play
+    # will be conducted via web sockets.
     mission_sizes = {
             5:[2,3,2,3,3], \
             6:[2,3,4,3,4], \
@@ -26,9 +29,8 @@ class pandsbot():
             9:[3,4,4,5,5], \
             10:[3,4,4,5,5]
     }
-    #number of spies for different game sizes
+    # number of spies for different game sizes
     spy_count = {5:2, 6:2, 7:3, 8:3, 9:3, 10:4} 
-    #e.g. self.betrayals_required[8][3] is the number of betrayals required for the 3rd mission in a game of 8 to fail
     fails_required = {
             5:[1,1,1,1,1], \
             6:[1,1,1,1,1], \
@@ -201,7 +203,7 @@ class pandsbot():
         Return the team with the lowest sus value
         '''
         bad = self.get_most_sus_team()
-        temp = set(self.others)-set(bad)
+        temp = set(self.others) - set(bad)
         result = sorted(temp, key=lambda p: self.get_sus_value(p))
         
         return result
@@ -290,7 +292,7 @@ class pandsbot():
         #* Did the team get rejected?
         n_approved = len(votes)
         #* Not majority vote, increment number of rejected votes
-        if 2*n_approved <= self.number_of_players:
+        if 2 * n_approved <= self.number_of_players:
             self.n_rejected_votes += 1
 
         not_in_mission = [i for i in self.players if i not in mission]
@@ -413,6 +415,7 @@ class pandsbot():
         spies_win, True iff the spies caused 3+ missions to fail
         spies, a list of the player indexes for the spies.
         '''
+        #! DELETE
         if not spies_win and self.is_spy():
             self.times_won += 1
             self.game_as_spy += 1
