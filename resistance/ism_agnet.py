@@ -6,17 +6,9 @@
 
 import random
 
-from bcolors import bcolors  # ! DELETE
-from tester import GAMES  # ! DELETE
-
 
 class ISMAgent():
     '''A sample implementation of a random agent in the game The Resistance'''
-
-    times_won = 0
-    n_games = 0
-    game_as_spy = 0
-    game_as_res = 0
 
     #game parameters for agents to access
     #python is such that these variables could be mutated, so tournament play
@@ -99,9 +91,6 @@ class ISMAgent():
             for i in sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[0:betrayals_required-1]:
                 if i not in team:
                     team.append(i)
-            # if len(team) < betrayals_required:
-            #     print(sorted(list(self.spy_list), key=lambda i: self.sus_meter[i]))
-            #     team.append(sorted(list(self.spy_list), key=lambda i: self.sus_meter[i])[betrayals_required])
 
             # * fill the rest of team with least sus resistance players
             for i in sorted([i for i in self.sus_meter.keys() if i not in self.spy_list], key=lambda i: self.sus_meter[i]):
@@ -184,7 +173,7 @@ class ISMAgent():
         # * Did the team get rejected?
         n_approved = len(votes)
         # * Not majority vote, increment number of rejected votes
-        if 2*n_approved <= self.number_of_players:
+        if 2 * n_approved <= self.number_of_players:
             self.n_rejected_votes += 1
 
         # * assume all who rejected the fifth vote are spies (playing optimally)
@@ -326,6 +315,7 @@ class ISMAgent():
                 if self.current_mission == 3 and not mission_success:
                     for i in [i for i in self.last_votes if i not in mission]:
                         self.sus_meter[i] += 700
+        # * Reduce sus for missions with no betrayals
         else:
             for agent in mission:
                 self.sus_meter[agent] -= 25
@@ -336,10 +326,6 @@ class ISMAgent():
         rounds_complete - the number of rounds (0-5) that have been completed
         missions_failed - the number of missions (0-3) that have failed.
         '''
-        # * for our own sake
-        # ratio betw rounds_complete : missions_failed, how affect us?
-        # called from
-
         pass
 
     # * Game over - who won
@@ -349,21 +335,4 @@ class ISMAgent():
         spies_win - True iff the spies caused 3+ missions to fail
         spies     - a list of the player indexes for the spies.
         '''
-        if not spies_win and self.is_spy():
-            self.times_won += 1
-            self.game_as_spy += 1
-        elif spies_win and self.is_spy():
-            pass
-        elif not spies_win and not self.is_spy():
-            pass
-        elif spies_win and not self.is_spy():
-            self.times_won += 1
-            self.game_as_res += 1
-        
-        self.n_games += 1
-        # print(bcolors.GREEN, bcolors.UNDERLINE, self.player_number, bcolors.RESET)
-        if (self.n_games >= GAMES):
-            print(bcolors.GREEN, "    garb = {:.2f}%".format(self.times_won / self.n_games * 100),
-                 "({}), s={}, r={}".format(self.n_games, self.game_as_spy, self.game_as_res), bcolors.RESET)
-        # time.sleep(1)
         pass

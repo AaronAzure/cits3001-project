@@ -6,17 +6,9 @@
 import random
 from itertools import combinations
 
-from bcolors import bcolors #! DELETE
-from tester import GAMES    #! DELETE
-
 
 class GSMAgent():
     '''A sample implementation of a random agent in the game The Resistance'''
-
-    times_won = 0
-    n_games = 0
-    game_as_spy = 0
-    game_as_res = 0
 
     # game parameters for agents to access
     # python is such that these variables could be mutated, so tournament play
@@ -118,12 +110,15 @@ class GSMAgent():
         this function is called in vote_outcome and mission_outcome
         '''
         #* Calculate how plausible a possible combination of spies are
-        for x in self.suspect_teams:
+        for team in self.suspect_teams:
             sus_value = 1
+            possible_spy_members = []
+            for i in range(self.number_of_spies):
+                possible_spy_members.append(team[0][i])
             #* calculate/retreive the sus value of each individual agent
             for i in range(self.number_of_spies):
-                if self.suspects[x[0][i]].value != 0:
-                    sus_value *= self.suspects[x[0][i]].value
+                if self.suspects[team[0][i]].value != 0:
+                    sus_value *= self.suspects[team[0][i]].value
             #* This agent is not guaranteed to be a spy
             if sus_value < 1:
                 collusiveness = 1
@@ -131,12 +126,12 @@ class GSMAgent():
                 for i in range(self.number_of_spies):
                     for j in range(self.number_of_spies):
                         if i != j:
-                            collusiveness *= self.associates[x[0][i]][x[0][j]].value
+                            collusiveness *= self.associates[team[0][i]][team[0][j]].value
                 new_sus_value = 0.50 + 0.50 * collusiveness
                 voted_for_sus_val = 0.25
                 sus_actions_val = 0.0
                 good_actions_val = 0.0
-                for i in self.others:
+                for i in possible_spy_members:
                     if self.voted_for_sus.get(i)[1] > 0:
                         voted_for_sus_val += (self.voted_for_sus[i][0]/self.voted_for_sus[i][1])
 
@@ -148,12 +143,12 @@ class GSMAgent():
 
                 new_sus_value *= (0.75 + voted_for_sus_val)
                 new_sus_value *= sus_value
-                new_sus_value *= 0.4 + 0.6 * (sus_actions_val)/2
-                new_sus_value *= 1 - 0.1 * (good_actions_val)/2
-                x[1] = new_sus_value
+                new_sus_value *= 0.4 + 0.6 * (sus_actions_val)/self.number_of_spies
+                new_sus_value *= 1 - 0.3 * (good_actions_val)/self.number_of_spies
+                team[1] = new_sus_value
             #* This agent is guaranteed to be a spy
             else:
-                x[1] = sus_value
+                team[1] = sus_value
 
     def maybe_last_turn(self):
         '''
@@ -415,22 +410,6 @@ class GSMAgent():
         spies_win, True iff the spies caused 3+ missions to fail
         spies, a list of the player indexes for the spies.
         '''
-        #! DELETE
-        if not spies_win and self.is_spy():
-            self.times_won += 1
-            self.game_as_spy += 1
-        elif spies_win and self.is_spy():
-            pass
-        elif not spies_win and not self.is_spy():
-            pass
-        elif spies_win and not self.is_spy():
-            self.times_won += 1
-            self.game_as_res += 1
-        
-        self.n_games += 1
-        if (self.n_games >= GAMES):
-            print(bcolors.GREEN, "  pands = {:.2f}%".format(self.times_won / self.n_games * 100),
-                 "({}), s={}, r={}".format(self.n_games, self.game_as_spy, self.game_as_res), bcolors.RESET)
         pass
 
 

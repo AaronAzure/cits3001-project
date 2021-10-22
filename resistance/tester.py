@@ -1,6 +1,6 @@
 # class for initialize and update probability
 
-GAMES = 1000
+GAMES = 10000
 # GAMES = 1
 
 # class Probability(object):

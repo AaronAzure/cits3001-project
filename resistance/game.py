@@ -34,10 +34,6 @@ class Game:
         for id in range(self.num_players):
             if len(self.spies) < Agent.spy_count[self.num_players] and "spy" in self.agents[id].name:
                 self.spies.append(id)
-        # while len(self.spies) < Agent.spy_count[self.num_players]:
-        #     spy = len(self.spies)
-        #     if spy not in self.spies:
-        #         self.spies.append(spy)
         # start game for each agent
         for agent_id in range(self.num_players):
             spy_list = self.spies.copy() if agent_id in self.spies else []
